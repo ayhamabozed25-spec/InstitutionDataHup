@@ -23,7 +23,10 @@
 
       <div>
         <button class="btn btn-light me-2" onclick="showPage('hierarchyPage')">الهيكلية</button>
-        <button class="btn btn-light" onclick="showPage('employeesPage')">الموظفين</button>
+        <button class="btn btn-light me-2" onclick="showPage('employeesPage')">الموظفين</button>
+        <button class="btn btn-light me-2" onclick="showPage('devicesPage')">الأجهزة</button>
+        <button class="btn btn-light me-2" onclick="showPage('vehiclesPage')">المركبات</button>
+        <button class="btn btn-light me-2" onclick="showPage('furniturePage')">الأثاث</button>
       </div>
     </div>
   </nav>
@@ -38,7 +41,8 @@
       <div class="card-header">إضافة مؤسسة</div>
       <div class="card-body">
         <input id="orgName" class="form-control mb-2" placeholder="اسم المؤسسة">
-        <button class="btn btn-primary" onclick="addHierarchy('Institution','orgName','')">إضافة</button>
+        <select id="orgManagerSelect" class="form-select mb-2"></select>
+        <button class="btn btn-primary" onclick="addHierarchy('Institution','orgName','', 'orgManagerSelect')">إضافة</button>
       </div>
     </div>
 
@@ -53,7 +57,8 @@
       <div class="card-body">
         <input id="deptName" class="form-control mb-2" placeholder="اسم القسم">
         <select id="deptOrgSelect" class="form-select mb-2"></select>
-        <button class="btn btn-primary" onclick="addHierarchy('Department','deptName','deptOrgSelect')">إضافة</button>
+        <select id="deptManagerSelect" class="form-select mb-2"></select>
+        <button class="btn btn-primary" onclick="addHierarchy('Department','deptName','deptOrgSelect','deptManagerSelect')">إضافة</button>
       </div>
     </div>
 
@@ -68,7 +73,8 @@
       <div class="card-body">
         <input id="divName" class="form-control mb-2" placeholder="اسم الشعبة">
         <select id="divDeptSelect" class="form-select mb-2"></select>
-        <button class="btn btn-primary" onclick="addHierarchy('Section','divName','divDeptSelect')">إضافة</button>
+        <select id="divManagerSelect" class="form-select mb-2"></select>
+        <button class="btn btn-primary" onclick="addHierarchy('Section','divName','divDeptSelect','divManagerSelect')">إضافة</button>
       </div>
     </div>
 
@@ -97,7 +103,67 @@
 
   </div>
 
-  <!-- مودال التعديل -->
+  <!-- صفحة الأجهزة -->
+  <div id="devicesPage" class="page">
+
+    <h2 class="mb-3">إدارة الأجهزة</h2>
+
+    <div class="card mb-4">
+      <div class="card-header">إضافة جهاز</div>
+      <div class="card-body">
+        <input id="deviceName" class="form-control mb-2" placeholder="اسم الجهاز">
+        <input id="deviceSerial" class="form-control mb-2" placeholder="الرقم التسلسلي">
+        <select id="deviceEmployeeSelect" class="form-select mb-2"></select>
+        <button class="btn btn-primary" onclick="addDevice()">إضافة</button>
+      </div>
+    </div>
+
+    <h4>قائمة الأجهزة</h4>
+    <div id="devicesList" class="mb-5"></div>
+
+  </div>
+
+  <!-- صفحة المركبات -->
+  <div id="vehiclesPage" class="page">
+
+    <h2 class="mb-3">إدارة المركبات</h2>
+
+    <div class="card mb-4">
+      <div class="card-header">إضافة مركبة</div>
+      <div class="card-body">
+        <input id="vehiclePlate" class="form-control mb-2" placeholder="رقم اللوحة">
+        <input id="vehicleModel" class="form-control mb-2" placeholder="الموديل">
+        <select id="vehicleEmployeeSelect" class="form-select mb-2"></select>
+        <button class="btn btn-primary" onclick="addVehicle()">إضافة</button>
+      </div>
+    </div>
+
+    <h4>قائمة المركبات</h4>
+    <div id="vehiclesList" class="mb-5"></div>
+
+  </div>
+
+  <!-- صفحة الأثاث -->
+  <div id="furniturePage" class="page">
+
+    <h2 class="mb-3">إدارة الأثاث</h2>
+
+    <div class="card mb-4">
+      <div class="card-header">إضافة قطعة أثاث</div>
+      <div class="card-body">
+        <input id="furnitureName" class="form-control mb-2" placeholder="اسم الأثاث">
+        <input id="furnitureCode" class="form-control mb-2" placeholder="الرمز / الكود">
+        <select id="furnitureEmployeeSelect" class="form-select mb-2"></select>
+        <button class="btn btn-primary" onclick="addFurniture()">إضافة</button>
+      </div>
+    </div>
+
+    <h4>قائمة الأثاث</h4>
+    <div id="furnitureList" class="mb-5"></div>
+
+  </div>
+
+  <!-- مودال التعديل (للهيكلية والموظفين فقط) -->
   <div class="modal fade" id="editModal" tabindex="-1">
     <div class="modal-dialog">
       <div class="modal-content">
@@ -108,8 +174,8 @@
         </div>
 
         <div class="modal-body">
-          <input id="editName" class="form-control mb-3">
-          <select id="editSelect" class="form-select"></select>
+          <input id="editName" class="form-control mb-3" placeholder="الاسم">
+          <select id="editSelect" class="form-select mb-3"></select>
 
           <input type="hidden" id="editId">
           <input type="hidden" id="editType">
