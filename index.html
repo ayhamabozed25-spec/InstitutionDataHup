@@ -2,30 +2,71 @@
 <html lang="ar">
 <head>
   <meta charset="UTF-8">
-  <title>نظام CRUD للمؤسسات</title>
+  <title>نظام إدارة المؤسسات</title>
+
+  <!-- Bootstrap -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
   <link rel="stylesheet" href="style.css">
 </head>
-<body>
 
-  <h1>نظام إدارة المؤسسات</h1>
+<body class="container py-4" dir="rtl">
 
-  <!-- نموذج إضافة مؤسسة -->
-  <section>
-    <h2>إضافة مؤسسة</h2>
-    <input id="orgName" placeholder="اسم المؤسسة">
-    <button onclick="addOrganization()">إضافة</button>
-  </section>
+  <h1 class="mb-4 text-center">نظام إدارة المؤسسات</h1>
+
+  <!-- ------------------ إضافة مؤسسة ------------------ -->
+  <div class="card mb-4">
+    <div class="card-header">إضافة مؤسسة</div>
+    <div class="card-body">
+      <input id="orgName" class="form-control mb-2" placeholder="اسم المؤسسة">
+      <button class="btn btn-primary" onclick="addOrganization()">إضافة</button>
+    </div>
+  </div>
+
+  <h3>قائمة المؤسسات</h3>
+  <div id="orgList" class="mb-5"></div>
 
   <hr>
 
-  <!-- عرض المؤسسات -->
-  <section>
-    <h2>قائمة المؤسسات</h2>
-    <div id="orgList"></div>
-  </section>
+  <!-- ------------------ إضافة قسم ------------------ -->
+  <div class="card mb-4">
+    <div class="card-header">إضافة قسم</div>
+    <div class="card-body">
+      <input id="deptName" class="form-control mb-2" placeholder="اسم القسم">
 
-  <script type="module" src="firebase.js"></script>
-  <script type="module" src="crud.js"></script>
+      <select id="deptOrgSelect" class="form-select mb-2"></select>
 
-</body>
-</html>
+      <button class="btn btn-primary" onclick="addDepartment()">إضافة</button>
+    </div>
+  </div>
+
+  <h3>قائمة الأقسام</h3>
+  <div id="deptList" class="mb-5"></div>
+
+  <hr>
+
+  <!-- ------------------ إضافة شعبة ------------------ -->
+  <div class="card mb-4">
+    <div class="card-header">إضافة شعبة</div>
+    <div class="card-body">
+      <input id="divName" class="form-control mb-2" placeholder="اسم الشعبة">
+
+      <select id="divDeptSelect" class="form-select mb-2"></select>
+
+      <button class="btn btn-primary" onclick="addDivision()">إضافة</button>
+    </div>
+  </div>
+
+  <h3>قائمة الشعب</h3>
+  <div id="divList" class="mb-5"></div>
+
+  <hr>
+
+  <!-- ------------------ إضافة موظف ------------------ -->
+  <div class="card mb-4">
+    <div class="card-header">إضافة موظف</div>
+    <div class="card-body">
+      <input id="empName" class="form-control mb-2" placeholder="اسم الموظف">
+
+      <select id="empDivSelect" class="form-select mb-2"></select>
+
