@@ -10,88 +10,61 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 /* ---------------------------------------------------
-   دالة مساعدة: جلب سلسلة الهيكلية (شعبة → قسم → مؤسسة)
+   دالة مساعدة: جلب سلسلة الهيكلية (قسم → شعبة)
 --------------------------------------------------- */
-async function getHierarchyChain(sectionRef) {
-  const chain = { section: null, department: null, institution: null };
+async function getHierarchyChain(ref) {
+  const chain = { section: null, department: null, employee: null };
 
-  if (!sectionRef) return chain;
+  if (!ref) return chain;
 
-  const secSnap = await getDoc(sectionRef);
+  const secSnap = await getDoc(ref);
+
   if (!secSnap.exists()) return chain;
 
-  chain.section = { id: sectionRef.id, ...secSnap.data() };
+  const data = secSnap.data();
 
-  const deptRef = secSnap.data().parent;
-  if (!deptRef) return chain;
+  if (data.type === "Section") {
+    chain.section = ref.id;
+    chain.department = data.parent?.id || null;
+  }
 
-  const deptSnap = await getDoc(deptRef);
-  chain.department = { id: deptRef.id, ...deptSnap.data() };
-
-  const instRef = deptSnap.data().parent;
-  if (!instRef) return chain;
-
-  const instSnap = await getDoc(instRef);
-  chain.institution = { id: instRef.id, ...instSnap.data() };
+  if (data.type === "Department") {
+    chain.department = ref.id;
+  }
 
   return chain;
 }
 
 /* ---------------------------------------------------
-   دالة الفلترة الصارمة A1
+   الفلترة الصارمة (بدون مؤسسة)
 --------------------------------------------------- */
 function passesFilter(chain) {
-  const inst = document.getElementById("filterInstitution").value;
   const dept = document.getElementById("filterDepartment").value;
   const sec  = document.getElementById("filterSection").value;
   const emp  = document.getElementById("filterEmployee").value;
 
-  // فلترة صارمة: إذا لم يتم اختيار مؤسسة → لا شيء يظهر
-  if (!inst) return false;
+  // إذا لم يتم اختيار قسم → لا شيء يظهر
+  if (!dept) return false;
 
   if (emp && chain.employee !== emp) return false;
   if (sec && chain.section !== sec) return false;
   if (dept && chain.department !== dept) return false;
-  if (inst && chain.institution !== inst) return false;
 
   return true;
 }
 
 /* ---------------------------------------------------
-   تحميل المؤسسات في الترويسة
---------------------------------------------------- */
-async function filterLoadInstitutions() {
-  const select = document.getElementById("filterInstitution");
-  select.innerHTML = "<option value=''>اختر مؤسسة</option>";
-
-  const snap = await getDocs(collection(db, "Hierarchy"));
-
-  snap.forEach(d => {
-    const data = d.data();
-    if (data.type === "Institution") {
-      select.innerHTML += `<option value="${d.id}">${data.name}</option>`;
-    }
-  });
-}
-
-
-/* ---------------------------------------------------
-   تحميل الأقسام بناءً على المؤسسة
+   تحميل الأقسام في الترويسة
 --------------------------------------------------- */
 async function filterLoadDepartments() {
-  const instId = document.getElementById("filterInstitution").value;
   const select = document.getElementById("filterDepartment");
   select.innerHTML = "<option value=''>اختر قسم</option>";
 
-  if (!instId) {
-    filterLoadSections();
-    return;
-  }
-
   const snap = await getDocs(collection(db, "Hierarchy"));
+
   snap.forEach(d => {
     const data = d.data();
-    if (data.type === "Department" && data.parent?.id === instId) {
+    if (data.type === "Department") {
       select.innerHTML += `<option value="${d.id}">${data.name}</option>`;
     }
   });
@@ -105,6 +78,7 @@ async function filterLoadDepartments() {
 async function filterLoadSections() {
   const deptId = document.getElementById("filterDepartment").value;
   const select = document.getElementById("filterSection");
+
   select.innerHTML = "<option value=''>اختر شعبة</option>";
 
   if (!deptId) {
@@ -113,6 +87,7 @@ async function filterLoadSections() {
   }
 
   const snap = await getDocs(collection(db, "Hierarchy"));
+
   snap.forEach(d => {
     const data = d.data();
     if (data.type === "Section" && data.parent?.id === deptId) {
@@ -128,16 +103,33 @@ async function filterLoadSections() {
 --------------------------------------------------- */
 async function filterLoadEmployees() {
   const secId = document.getElementById("filterSection").value;
+  const deptId = document.getElementById("filterDepartment").value;
+
   const select = document.getElementById("filterEmployee");
   select.innerHTML = "<option value=''>اختر موظف</option>";
 
-  if (!secId) return;
+  if (!deptId) return;
 
   const snap = await getDocs(collection(db, "Employees"));
+
   snap.forEach(d => {
     const data = d.data();
-    if (data.hierarchy?.id === secId) {
-      select.innerHTML += `<option value="${d.id}">${data.name}</option>`;
+
+    if (!data.hierarchy) return;
+
+    const hId = data.hierarchy.id;
+
+    if (secId) {
+      if (hId === secId) {
+        select.innerHTML += `<option value="${d.id}">${data.name}</option>`;
+      }
+    } else {
+      // موظف يتبع القسم مباشرة
+      getDoc(doc(db, "Hierarchy", hId)).then(hSnap => {
+        if (hSnap.exists() && hSnap.data().type === "Department" && hId === deptId) {
+          select.innerHTML += `<option value="${d.id}">${data.name}</option>`;
+        }
+      });
     }
   });
 
@@ -145,145 +137,154 @@ async function filterLoadEmployees() {
 }
 
 /* ---------------------------------------------------
-   تحميل الموظفين لأي قائمة (مدير – جهاز – مركبة – أثاث)
+   تحميل الأقسام لأي قائمة
 --------------------------------------------------- */
-async function loadEmployeesSelect(selectId) {
+async function loadDepartmentsSelect(selectId) {
   const select = document.getElementById(selectId);
   if (!select) return;
 
-  select.innerHTML = "<option value=''>اختر موظف</option>";
+  select.innerHTML = "<option value=''>اختر قسم</option>";
 
-  const snap = await getDocs(collection(db, "Employees"));
+  const snap = await getDocs(collection(db, "Hierarchy"));
+
   snap.forEach(d => {
-    select.innerHTML += `<option value="${d.id}">${d.data().name}</option>`;
+    if (d.data().type === "Department") {
+      select.innerHTML += `<option value="${d.id}">${d.data().name}</option>`;
+    }
   });
 }
 
 /* ---------------------------------------------------
-   تحميل الهيكلية حسب النوع (مؤسسة – قسم – شعبة)
+   تحميل الشعب لأي قائمة
 --------------------------------------------------- */
-async function loadSelect(type, selectId) {
+async function loadSectionsSelect(selectId, deptId) {
   const select = document.getElementById(selectId);
   if (!select) return;
 
-  select.innerHTML = "<option value=''>اختر</option>";
+  select.innerHTML = "<option value=''>بدون شعبة</option>";
+
+  if (!deptId) return;
 
   const snap = await getDocs(collection(db, "Hierarchy"));
+
   snap.forEach(d => {
     const data = d.data();
-    if (data.type === type) {
+    if (data.type === "Section" && data.parent?.id === deptId) {
       select.innerHTML += `<option value="${d.id}">${data.name}</option>`;
     }
   });
 }
 /* ---------------------------------------------------
-   تحميل الهيكلية (مؤسسة – قسم – شعبة) مع الفلترة الصارمة
+   إضافة قسم
 --------------------------------------------------- */
-async function loadHierarchy(type, listElementId) {
-  const list = document.getElementById(listElementId);
-  list.innerHTML = "";
+async function addDepartment() {
+  const name = document.getElementById("deptName").value;
 
-  const snap = await getDocs(collection(db, "Hierarchy"));
-
-  for (const d of snap.docs) {
-    const data = d.data();
-    if (data.type !== type) continue;
-
-    // جلب سلسلة الهيكلية
-    let chain = { institution: null, department: null, section: null };
-
-    if (data.type === "Institution") {
-      chain.institution = d.id;
-    }
-
-    if (data.type === "Department") {
-      const instRef = data.parent;
-      if (!instRef) continue;
-      chain.institution = instRef.id;
-      chain.department = d.id;
-    }
-
-    if (data.type === "Section") {
-      const deptRef = data.parent;
-      if (!deptRef) continue;
-
-      const deptSnap = await getDoc(deptRef);
-      const instRef = deptSnap.data().parent;
-
-      chain.section = d.id;
-      chain.department = deptRef.id;
-      chain.institution = instRef.id;
-    }
-
-    // تطبيق الفلترة الصارمة
-    if (!passesFilter(chain)) continue;
-
-    // اسم الأب
-    let parentName = "—";
-    if (data.parent) {
-      const parentSnap = await getDoc(data.parent);
-      parentName = parentSnap.exists() ? parentSnap.data().name : "—";
-    }
-
-    // اسم المدير
-    let managerName = "—";
-    if (data.manager) {
-      const managerSnap = await getDoc(data.manager);
-      managerName = managerSnap.exists() ? managerSnap.data().name : "—";
-    }
-
-    list.innerHTML += `
-      <div class="card p-2 mb-2">
-        <b>${data.name}</b>
-        <div>الأب: ${parentName} — المدير: ${managerName}</div>
-        <div class="mt-2">
-          <button class="btn btn-sm btn-warning" onclick="openEdit('${d.id}','${type}')">تعديل</button>
-          <button class="btn btn-sm btn-danger" onclick="deleteHierarchy('${d.id}')">حذف</button>
-        </div>
-      </div>
-    `;
-  }
-}
-
-/* ---------------------------------------------------
-   إضافة مؤسسة / قسم / شعبة
---------------------------------------------------- */
-async function addHierarchy(type, nameInputId, parentSelectId, managerSelectId) {
-  const name = document.getElementById(nameInputId).value;
-  const parentId = parentSelectId ? document.getElementById(parentSelectId).value : "";
-  const managerId = managerSelectId ? document.getElementById(managerSelectId).value : "";
-
-  if (!name.trim()) return alert("أدخل الاسم");
-
-  const parentRef = parentId ? doc(db, "Hierarchy", parentId) : null;
-  const managerRef = managerId ? doc(db, "Employees", managerId) : null;
+  if (!name.trim()) return alert("أدخل اسم القسم");
 
   await addDoc(collection(db, "Hierarchy"), {
     name,
-    type,
-    parent: parentRef,
-    manager: managerRef
+    type: "Department",
+    parent: null
   });
 
-  document.getElementById(nameInputId).value = "";
-
-  reloadAll();
+  document.getElementById("deptName").value = "";
+  loadHierarchyTree();
+  loadDepartmentsSelect("divDeptSelect");
+  loadDepartmentsSelect("empDeptSelect");
 }
 
 /* ---------------------------------------------------
-   حذف عنصر من الهيكلية
+   إضافة شعبة
 --------------------------------------------------- */
-async function deleteHierarchy(id) {
-  await deleteDoc(doc(db, "Hierarchy", id));
-  reloadAll();
+async function addSection() {
+  const name = document.getElementById("divName").value;
+  const deptId = document.getElementById("divDeptSelect").value;
+
+  if (!name.trim() || !deptId)
+    return alert("أدخل البيانات كاملة");
+
+  await addDoc(collection(db, "Hierarchy"), {
+    name,
+    type: "Section",
+    parent: doc(db, "Hierarchy", deptId)
+  });
+
+  document.getElementById("divName").value = "";
+  loadHierarchyTree();
 }
 
 /* ---------------------------------------------------
-   تحميل المؤسسات / الأقسام / الشعب
+   عرض الهيكلية بشكل هرمي (H1)
 --------------------------------------------------- */
-function loadInstitutions() { loadHierarchy("Institution", "orgList"); }
-function loadDepartments() { loadHierarchy("Department", "deptList"); }
-function loadSections() { loadHierarchy("Section", "divList"); }
+async function loadHierarchyTree() {
+  const container = document.getElementById("hierarchyTree");
+  container.innerHTML = "";
+
+  const snap = await getDocs(collection(db, "Hierarchy"));
+  const empSnap = await getDocs(collection(db, "Employees"));
+
+  const departments = [];
+  const sections = [];
+
+  snap.forEach(d => {
+    const data = d.data();
+    if (data.type === "Department") departments.push({ id: d.id, ...data });
+    if (data.type === "Section") sections.push({ id: d.id, ...data });
+  });
+
+  departments.forEach(dept => {
+    // حساب عدد الموظفين في القسم مباشرة
+    let deptEmployees = 0;
+
+    empSnap.forEach(e => {
+      const h = e.data().hierarchy;
+      if (!h) return;
+
+      if (h.id === dept.id) deptEmployees++;
+    });
+
+    container.innerHTML += `
+      <div class="card p-3 mb-3">
+        <h5>${dept.name} <span class="text-muted">(${deptEmployees} موظفين)</span></h5>
+        <div id="dept-${dept.id}-sections"></div>
+      </div>
+    `;
+  });
+
+  // عرض الشعب تحت كل قسم
+  sections.forEach(sec => {
+    const parentId = sec.parent?.id;
+    const secContainer = document.getElementById(`dept-${parentId}-sections`);
+
+    if (!secContainer) return;
+
+    // حساب موظفي الشعبة
+    let secEmployees = [];
+
+    empSnap.forEach(e => {
+      const h = e.data().hierarchy;
+      if (!h) return;
+
+      if (h.id === sec.id) secEmployees.push(e.data().name);
+    });
+
+    secContainer.innerHTML += `
+      <div class="section-item">
+        <b>- ${sec.name}</b>
+        <div class="text-muted">الموظفون: ${secEmployees.length ? secEmployees.join("، ") : "—"}</div>
+      </div>
+    `;
+  });
+}
+
+/* ---------------------------------------------------
+   تحميل الشعب عند اختيار قسم للموظف
+--------------------------------------------------- */
+async function loadSectionsForEmployee() {
+  const deptId = document.getElementById("empDeptSelect").value;
+  loadSectionsSelect("empSectionSelect", deptId);
+}
 
 /* ---------------------------------------------------
    إضافة موظف
@@ -311,11 +312,11 @@ async function addEmployee() {
 
   document.getElementById("empName").value = "";
   loadEmployees();
+  loadHierarchyTree();
 }
 
-
 /* ---------------------------------------------------
-   عرض الموظفين مع الفلترة الصارمة
+   عرض الموظفين
 --------------------------------------------------- */
 async function loadEmployees() {
   const list = document.getElementById("empList");
@@ -326,28 +327,17 @@ async function loadEmployees() {
   for (const d of snap.docs) {
     const data = d.data();
 
-    let chain = { employee: d.id, section: null, department: null, institution: null };
-
-    if (data.hierarchy) {
-      const hChain = await getHierarchyChain(data.hierarchy);
-      chain.section = hChain.section?.id;
-      chain.department = hChain.department?.id;
-      chain.institution = hChain.institution?.id;
-    }
-
-    if (!passesFilter(chain)) continue;
-
     let hierarchyName = "—";
+
     if (data.hierarchy) {
       const hSnap = await getDoc(data.hierarchy);
-      hierarchyName = hSnap.exists() ? hSnap.data().name : "—";
+      if (hSnap.exists()) hierarchyName = hSnap.data().name;
     }
 
     list.innerHTML += `
       <div class="card p-2 mb-2">
-        <b>${data.name}</b> — مرتبط بـ: ${hierarchyName}
+        <b>${data.name}</b> — تابع لـ: ${hierarchyName}
         <div class="mt-2">
-          <button class="btn btn-sm btn-warning" onclick="openEdit('${d.id}','Employee')">تعديل</button>
           <button class="btn btn-sm btn-danger" onclick="deleteEmployee('${d.id}')">حذف</button>
         </div>
       </div>
@@ -361,87 +351,10 @@ async function loadEmployees() {
 async function deleteEmployee(id) {
   await deleteDoc(doc(db, "Employees", id));
   loadEmployees();
-}
-
-/* ---------------------------------------------------
-   فتح نافذة التعديل (هيكلية + موظفين)
---------------------------------------------------- */
-async function openEdit(id, type) {
-  document.getElementById("editId").value = id;
-  document.getElementById("editType").value = type;
-
-  const nameInput = document.getElementById("editName");
-  const select = document.getElementById("editSelect");
-
-  select.innerHTML = "";
-  select.style.display = "block";
-
-  if (type === "Institution") {
-    const snap = await getDoc(doc(db, "Hierarchy", id));
-    nameInput.value = snap.data().name;
-    select.style.display = "none";
-  }
-
-  if (type === "Department") {
-    await loadSelect("Institution", "editSelect");
-    const snap = await getDoc(doc(db, "Hierarchy", id));
-    nameInput.value = snap.data().name;
-
-    if (snap.data().parent) {
-      select.value = snap.data().parent.id;
-    }
-  }
-
-  if (type === "Section") {
-    await loadSelect("Department", "editSelect");
-    const snap = await getDoc(doc(db, "Hierarchy", id));
-    nameInput.value = snap.data().name;
-
-    if (snap.data().parent) {
-      select.value = snap.data().parent.id;
-    }
-  }
-
-  if (type === "Employee") {
-    await loadSelect("Section", "editSelect");
-    const snap = await getDoc(doc(db, "Employees", id));
-    nameInput.value = snap.data().name;
-
-    if (snap.data().hierarchy) {
-      select.value = snap.data().hierarchy.id;
-    }
-  }
-
-  new bootstrap.Modal(document.getElementById("editModal")).show();
-}
-
-/* ---------------------------------------------------
-   حفظ التعديل
---------------------------------------------------- */
-async function saveEdit() {
-  const id = document.getElementById("editId").value;
-  const type = document.getElementById("editType").value;
-  const name = document.getElementById("editName").value;
-  const parentId = document.getElementById("editSelect").value;
-
-  if (type === "Employee") {
-    await updateDoc(doc(db, "Employees", id), {
-      name,
-      hierarchy: doc(db, "Hierarchy", parentId)
-    });
-    loadEmployees();
-  } else {
-    await updateDoc(doc(db, "Hierarchy", id), {
-      name,
-      parent: parentId ? doc(db, "Hierarchy", parentId) : null
-    });
-    reloadAll();
-  }
-
-  bootstrap.Modal.getInstance(document.getElementById("editModal")).hide();
+  loadHierarchyTree();
 }
 /* ---------------------------------------------------
-   إضافة جهاز (يرتبط بالموظف من الترويسة)
+   إضافة جهاز
 --------------------------------------------------- */
 async function addDevice() {
   const name = document.getElementById("deviceName").value;
@@ -479,7 +392,7 @@ async function loadDevices() {
     const data = d.data();
 
     let empName = "—";
-    let chain = { employee: null, section: null, department: null, institution: null };
+    let chain = { employee: null, section: null, department: null };
 
     if (data.employee) {
       const eSnap = await getDoc(data.employee);
@@ -490,9 +403,8 @@ async function loadDevices() {
 
         chain = {
           employee: data.employee.id,
-          section: hChain.section?.id,
-          department: hChain.department?.id,
-          institution: hChain.institution?.id
+          section: hChain.section,
+          department: hChain.department
         };
       }
     }
@@ -544,7 +456,7 @@ async function addVehicle() {
 }
 
 /* ---------------------------------------------------
-   عرض المركبات مع الفلترة الصارمة
+   عرض المركبات
 --------------------------------------------------- */
 async function loadVehicles() {
   const list = document.getElementById("vehiclesList");
@@ -557,7 +469,7 @@ async function loadVehicles() {
     const data = d.data();
 
     let empName = "—";
-    let chain = { employee: null, section: null, department: null, institution: null };
+    let chain = { employee: null, section: null, department: null };
 
     if (data.employee) {
       const eSnap = await getDoc(data.employee);
@@ -568,9 +480,8 @@ async function loadVehicles() {
 
         chain = {
           employee: data.employee.id,
-          section: hChain.section?.id,
-          department: hChain.department?.id,
-          institution: hChain.institution?.id
+          section: hChain.section,
+          department: hChain.department
         };
       }
     }
@@ -622,7 +533,7 @@ async function addFurniture() {
 }
 
 /* ---------------------------------------------------
-   عرض الأثاث مع الفلترة الصارمة
+   عرض الأثاث
 --------------------------------------------------- */
 async function loadFurniture() {
   const list = document.getElementById("furnitureList");
@@ -635,7 +546,7 @@ async function loadFurniture() {
     const data = d.data();
 
     let empName = "—";
-    let chain = { employee: null, section: null, department: null, institution: null };
+    let chain = { employee: null, section: null, department: null };
 
     if (data.employee) {
       const eSnap = await getDoc(data.employee);
@@ -646,9 +557,8 @@ async function loadFurniture() {
 
         chain = {
           employee: data.employee.id,
-          section: hChain.section?.id,
-          department: hChain.department?.id,
-          institution: hChain.institution?.id
+          section: hChain.section,
+          department: hChain.department
         };
       }
     }
@@ -666,24 +576,6 @@ async function loadFurniture() {
   }
 }
 
-async function loadSectionsForEmployee() {
-  const deptId = document.getElementById("empDeptSelect").value;
-  const select = document.getElementById("empSectionSelect");
-
-  select.innerHTML = "<option value=''>بدون شعبة</option>";
-
-  if (!deptId) return;
-
-  const snap = await getDocs(collection(db, "Hierarchy"));
-  snap.forEach(d => {
-    const data = d.data();
-    if (data.type === "Section" && data.parent?.id === deptId) {
-      select.innerHTML += `<option value="${d.id}">${data.name}</option>`;
-    }
-  });
-}
-
-
 /* ---------------------------------------------------
    حذف أثاث
 --------------------------------------------------- */
@@ -693,49 +585,26 @@ async function deleteFurniture(id) {
 }
 
 /* ---------------------------------------------------
-   تحميل كل البيانات عند تشغيل الصفحة
+   إعادة تحميل كل شيء
 --------------------------------------------------- */
 async function reloadAll() {
-
-  // تحميل الترويسة أولاً
-  await filterLoadInstitutions();
-
-  // الآن طبق الفلترة
-  loadInstitutions();
-  loadDepartments();
-  loadSections();
+  await filterLoadDepartments();
+  loadHierarchyTree();
   loadEmployees();
-
   loadDevices();
   loadVehicles();
   loadFurniture();
 
-  // تحميل قوائم الهيكلية
-  loadSelect("Institution", "deptOrgSelect");
-  loadSelect("Department", "divDeptSelect");
-
-  // تحميل الأقسام للموظفين
-  loadSelect("Department", "empDeptSelect");
-
-  // تحميل المديرين
-  loadEmployeesSelect("orgManagerSelect");
-  loadEmployeesSelect("deptManagerSelect");
-  loadEmployeesSelect("divManagerSelect");
+  loadDepartmentsSelect("divDeptSelect");
+  loadDepartmentsSelect("empDeptSelect");
 }
-
-
-window.onload = reloadAll;
 
 /* ---------------------------------------------------
    ربط الدوال بالـ window
 --------------------------------------------------- */
-window.addHierarchy = addHierarchy;
-window.deleteHierarchy = deleteHierarchy;
-
-window.loadHierarchy = loadHierarchy;
-window.loadInstitutions = loadInstitutions;
-window.loadDepartments = loadDepartments;
-window.loadSections = loadSections;
+window.addDepartment = addDepartment;
+window.addSection = addSection;
+window.loadHierarchyTree = loadHierarchyTree;
 
 window.addEmployee = addEmployee;
 window.loadEmployees = loadEmployees;
@@ -753,10 +622,12 @@ window.addFurniture = addFurniture;
 window.loadFurniture = loadFurniture;
 window.deleteFurniture = deleteFurniture;
 
-window.openEdit = openEdit;
-window.saveEdit = saveEdit;
-
-window.filterLoadInstitutions = filterLoadInstitutions;
 window.filterLoadDepartments = filterLoadDepartments;
 window.filterLoadSections = filterLoadSections;
 window.filterLoadEmployees = filterLoadEmployees;
+
+window.loadSectionsForEmployee = loadSectionsForEmployee;
+
+window.reloadAll = reloadAll;
+
+window.onload = reloadAll;
