@@ -216,19 +216,19 @@ window.openEdit = async function (id, type, name, relationId = "") {
   const select = document.getElementById("editSelect");
   select.innerHTML = "";
 
-  if (type === "departments") {
+  if (type === "Departments") {
     await loadOrgSelect();
     select.innerHTML = document.getElementById("deptOrgSelect").innerHTML;
     select.value = relationId;
   }
 
-  if (type === "divisions") {
+  if (type === "Sections") {
     await loadDeptSelect();
     select.innerHTML = document.getElementById("divDeptSelect").innerHTML;
     select.value = relationId;
   }
 
-  if (type === "employees") {
+  if (type === "Employees") {
     await loadDivSelect();
     select.innerHTML = document.getElementById("empDivSelect").innerHTML;
     select.value = relationId;
@@ -253,17 +253,17 @@ window.saveEdit = async function () {
   }
 
   if (type === "Departments") {
-    await updateDoc(ref, { name, organizationId: relation });
+    await updateDoc(ref, { name, InstitutionId: relation });
     loadDepartments();
   }
 
   if (type === "Sections") {
-    await updateDoc(ref, { name, departmentId: relation });
+    await updateDoc(ref, { name, DepartmentId: relation });
     loadDivisions();
   }
 
   if (type === "Employees") {
-    await updateDoc(ref, { name, divisionId: relation });
+    await updateDoc(ref, { name, SectionionId: relation });
     loadEmployees();
   }
 
