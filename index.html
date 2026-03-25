@@ -206,6 +206,156 @@
 
   </div>
 
+  <!-- Modals -->
+
+  <!-- تعديل قسم -->
+  <div class="modal fade" id="editDepartmentModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">تعديل قسم</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input id="editDeptId" type="hidden">
+          <label>اسم القسم</label>
+          <input id="editDeptName" class="form-control mb-2">
+          <label>رئيس القسم</label>
+          <select id="editDeptManager" class="form-select mb-2"></select>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+          <button class="btn btn-primary" onclick="saveDepartmentEdit()">حفظ</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- تعديل شعبة -->
+  <div class="modal fade" id="editSectionModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">تعديل شعبة</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input id="editSectionId" type="hidden">
+          <label>اسم الشعبة</label>
+          <input id="editSectionName" class="form-control mb-2">
+          <label>القسم التابع له</label>
+          <select id="editSectionDept" class="form-select mb-2"></select>
+          <label>رئيس الشعبة</label>
+          <select id="editSectionManager" class="form-select mb-2"></select>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+          <button class="btn btn-primary" onclick="saveSectionEdit()">حفظ</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- تعديل موظف -->
+  <div class="modal fade" id="editEmployeeModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">تعديل موظف</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input id="editEmpId" type="hidden">
+          <label>اسم الموظف</label>
+          <input id="editEmpName" class="form-control mb-2">
+          <label>القسم</label>
+          <select id="editEmpDept" class="form-select mb-2" onchange="loadEditEmpSections()"></select>
+          <label>الشعبة</label>
+          <select id="editEmpSection" class="form-select mb-2"></select>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+          <button class="btn btn-primary" onclick="saveEmployeeEdit()">حفظ</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- تعديل جهاز -->
+  <div class="modal fade" id="editDeviceModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">تعديل جهاز</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input id="editDeviceId" type="hidden">
+          <label>اسم الجهاز</label>
+          <input id="editDeviceName" class="form-control mb-2">
+          <label>الرقم التسلسلي</label>
+          <input id="editDeviceSerial" class="form-control mb-2">
+          <label>الموظف المستلم</label>
+          <select id="editDeviceEmployee" class="form-select mb-2"></select>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+          <button class="btn btn-primary" onclick="saveDeviceEdit()">حفظ</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- تعديل مركبة -->
+  <div class="modal fade" id="editVehicleModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">تعديل مركبة</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input id="editVehicleId" type="hidden">
+          <label>رقم اللوحة</label>
+          <input id="editVehiclePlate" class="form-control mb-2">
+          <label>الموديل</label>
+          <input id="editVehicleModel" class="form-control mb-2">
+          <label>الموظف المستلم</label>
+          <select id="editVehicleEmployee" class="form-select mb-2"></select>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+          <button class="btn btn-primary" onclick="saveVehicleEdit()">حفظ</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- تعديل أثاث -->
+  <div class="modal fade" id="editFurnitureModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">تعديل أثاث</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input id="editFurnitureId" type="hidden">
+          <label>اسم الأثاث</label>
+          <input id="editFurnitureName" class="form-control mb-2">
+          <label>الكود</label>
+          <input id="editFurnitureCode" class="form-control mb-2">
+          <label>الموظف المستلم</label>
+          <select id="editFurnitureEmployee" class="form-select mb-2"></select>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+          <button class="btn btn-primary" onclick="saveFurnitureEdit()">حفظ</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
   <script type="module" src="firebase.js"></script>
