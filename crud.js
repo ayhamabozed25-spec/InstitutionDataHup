@@ -282,3 +282,18 @@ window.onload = () => {
   loadDeptSelect();
   loadDivSelect();
 };
+window.addOrganization = addOrganization;
+window.deleteOrganization = deleteOrganization;
+
+window.addDepartment = addDepartment;
+window.deleteDepartment = deleteDepartment;
+
+window.addDivision = addDivision;
+window.deleteDivision = deleteDivision;
+
+window.addEmployee = addEmployee;
+window.deleteEmployee = deleteEmployee;
+
+window.openEdit = openEdit;
+window.saveEdit = saveEdit;
+
