@@ -591,5 +591,30 @@ async function loadFurniture() {
     `;
   }
 }
+window.addDepartment = addDepartment;
+window.addSection = addSection;
+
+window.addEmployee = addEmployee;
+window.loadSectionsForEmployee = loadSectionsForEmployee;
+
+window.addDevice = addDevice;
+window.addVehicle = addVehicle;
+window.addFurniture = addFurniture;
+
+window.deleteEmployee = deleteEmployee;
+window.deleteDevice = deleteDevice;
+window.deleteVehicle = deleteVehicle;
+window.deleteFurniture = deleteFurniture;
+
+window.filterLoadDepartments = filterLoadDepartments;
+window.filterLoadSections = filterLoadSections;
+window.filterLoadEmployees = filterLoadEmployees;
+
+window.reloadAll = reloadAll;
+window.loadHierarchyTree = loadHierarchyTree;
+window.loadEmployees = loadEmployees;
+window.loadDevices = loadDevices;
+window.loadVehicles = loadVehicles;
+window.loadFurniture = loadFurniture;
 
 /* ------------------------------------------------
