@@ -38,6 +38,26 @@ async function getHierarchyChain(sectionRef) {
 }
 
 /* ---------------------------------------------------
+   دالة الفلترة الصارمة A1
+--------------------------------------------------- */
+function passesFilter(chain) {
+  const inst = document.getElementById("filterInstitution").value;
+  const dept = document.getElementById("filterDepartment").value;
+  const sec  = document.getElementById("filterSection").value;
+  const emp  = document.getElementById("filterEmployee").value;
+
+  // فلترة صارمة: إذا لم يتم اختيار مؤسسة → لا شيء يظهر
+  if (!inst) return false;
+
+  if (emp && chain.employee !== emp) return false;
+  if (sec && chain.section !== sec) return false;
+  if (dept && chain.department !== dept) return false;
+  if (inst && chain.institution !== inst) return false;
+
+  return true;
+}
+
+/* ---------------------------------------------------
    تحميل المؤسسات في الترويسة
 --------------------------------------------------- */
 async function filterLoadInstitutions() {
@@ -120,6 +140,8 @@ async function filterLoadEmployees() {
       select.innerHTML += `<option value="${d.id}">${data.name}</option>`;
     }
   });
+
+  reloadAll();
 }
 
 /* ---------------------------------------------------
@@ -155,7 +177,7 @@ async function loadSelect(type, selectId) {
   });
 }
 /* ---------------------------------------------------
-   تحميل الهيكلية (مؤسسة – قسم – شعبة)
+   تحميل الهيكلية (مؤسسة – قسم – شعبة) مع الفلترة الصارمة
 --------------------------------------------------- */
 async function loadHierarchy(type, listElementId) {
   const list = document.getElementById(listElementId);
@@ -166,6 +188,35 @@ async function loadHierarchy(type, listElementId) {
   for (const d of snap.docs) {
     const data = d.data();
     if (data.type !== type) continue;
+
+    // جلب سلسلة الهيكلية
+    let chain = { institution: null, department: null, section: null };
+
+    if (data.type === "Institution") {
+      chain.institution = d.id;
+    }
+
+    if (data.type === "Department") {
+      const instRef = data.parent;
+      if (!instRef) continue;
+      chain.institution = instRef.id;
+      chain.department = d.id;
+    }
+
+    if (data.type === "Section") {
+      const deptRef = data.parent;
+      if (!deptRef) continue;
+
+      const deptSnap = await getDoc(deptRef);
+      const instRef = deptSnap.data().parent;
+
+      chain.section = d.id;
+      chain.department = deptRef.id;
+      chain.institution = instRef.id;
+    }
+
+    // تطبيق الفلترة الصارمة
+    if (!passesFilter(chain)) continue;
 
     // اسم الأب
     let parentName = "—";
@@ -253,7 +304,7 @@ async function addEmployee() {
 }
 
 /* ---------------------------------------------------
-   عرض الموظفين
+   عرض الموظفين مع الفلترة الصارمة
 --------------------------------------------------- */
 async function loadEmployees() {
   const list = document.getElementById("empList");
@@ -263,6 +314,17 @@ async function loadEmployees() {
 
   for (const d of snap.docs) {
     const data = d.data();
+
+    let chain = { employee: d.id, section: null, department: null, institution: null };
+
+    if (data.hierarchy) {
+      const hChain = await getHierarchyChain(data.hierarchy);
+      chain.section = hChain.section?.id;
+      chain.department = hChain.department?.id;
+      chain.institution = hChain.institution?.id;
+    }
+
+    if (!passesFilter(chain)) continue;
 
     let hierarchyName = "—";
     if (data.hierarchy) {
@@ -368,15 +430,18 @@ async function saveEdit() {
   bootstrap.Modal.getInstance(document.getElementById("editModal")).hide();
 }
 /* ---------------------------------------------------
-   إضافة جهاز
+   إضافة جهاز (يرتبط بالموظف من الترويسة)
 --------------------------------------------------- */
 async function addDevice() {
   const name = document.getElementById("deviceName").value;
   const serial = document.getElementById("deviceSerial").value;
-  const empId = document.getElementById("deviceEmployeeSelect").value;
+  const empId = document.getElementById("filterEmployee").value;
 
-  if (!name.trim() || !serial.trim() || !empId)
+  if (!name.trim() || !serial.trim())
     return alert("أدخل البيانات كاملة");
+
+  if (!empId)
+    return alert("يجب اختيار موظف من الترويسة");
 
   await addDoc(collection(db, "Devices"), {
     name,
@@ -390,7 +455,7 @@ async function addDevice() {
 }
 
 /* ---------------------------------------------------
-   عرض الأجهزة
+   عرض الأجهزة مع الفلترة الصارمة
 --------------------------------------------------- */
 async function loadDevices() {
   const list = document.getElementById("devicesList");
@@ -403,10 +468,25 @@ async function loadDevices() {
     const data = d.data();
 
     let empName = "—";
+    let chain = { employee: null, section: null, department: null, institution: null };
+
     if (data.employee) {
       const eSnap = await getDoc(data.employee);
-      empName = eSnap.exists() ? eSnap.data().name : "—";
+      if (eSnap.exists()) {
+        empName = eSnap.data().name;
+        const hRef = eSnap.data().hierarchy;
+        const hChain = await getHierarchyChain(hRef);
+
+        chain = {
+          employee: data.employee.id,
+          section: hChain.section?.id,
+          department: hChain.department?.id,
+          institution: hChain.institution?.id
+        };
+      }
     }
+
+    if (!passesFilter(chain)) continue;
 
     list.innerHTML += `
       <div class="card p-2 mb-2">
@@ -433,10 +513,13 @@ async function deleteDevice(id) {
 async function addVehicle() {
   const plate = document.getElementById("vehiclePlate").value;
   const model = document.getElementById("vehicleModel").value;
-  const empId = document.getElementById("vehicleEmployeeSelect").value;
+  const empId = document.getElementById("filterEmployee").value;
 
-  if (!plate.trim() || !model.trim() || !empId)
+  if (!plate.trim() || !model.trim())
     return alert("أدخل البيانات كاملة");
+
+  if (!empId)
+    return alert("يجب اختيار موظف من الترويسة");
 
   await addDoc(collection(db, "Vehicles"), {
     plate,
@@ -450,7 +533,7 @@ async function addVehicle() {
 }
 
 /* ---------------------------------------------------
-   عرض المركبات
+   عرض المركبات مع الفلترة الصارمة
 --------------------------------------------------- */
 async function loadVehicles() {
   const list = document.getElementById("vehiclesList");
@@ -463,10 +546,25 @@ async function loadVehicles() {
     const data = d.data();
 
     let empName = "—";
+    let chain = { employee: null, section: null, department: null, institution: null };
+
     if (data.employee) {
       const eSnap = await getDoc(data.employee);
-      empName = eSnap.exists() ? eSnap.data().name : "—";
+      if (eSnap.exists()) {
+        empName = eSnap.data().name;
+        const hRef = eSnap.data().hierarchy;
+        const hChain = await getHierarchyChain(hRef);
+
+        chain = {
+          employee: data.employee.id,
+          section: hChain.section?.id,
+          department: hChain.department?.id,
+          institution: hChain.institution?.id
+        };
+      }
     }
+
+    if (!passesFilter(chain)) continue;
 
     list.innerHTML += `
       <div class="card p-2 mb-2">
@@ -493,10 +591,13 @@ async function deleteVehicle(id) {
 async function addFurniture() {
   const name = document.getElementById("furnitureName").value;
   const code = document.getElementById("furnitureCode").value;
-  const empId = document.getElementById("furnitureEmployeeSelect").value;
+  const empId = document.getElementById("filterEmployee").value;
 
-  if (!name.trim() || !code.trim() || !empId)
+  if (!name.trim() || !code.trim())
     return alert("أدخل البيانات كاملة");
+
+  if (!empId)
+    return alert("يجب اختيار موظف من الترويسة");
 
   await addDoc(collection(db, "Furniture"), {
     name,
@@ -510,7 +611,7 @@ async function addFurniture() {
 }
 
 /* ---------------------------------------------------
-   عرض الأثاث
+   عرض الأثاث مع الفلترة الصارمة
 --------------------------------------------------- */
 async function loadFurniture() {
   const list = document.getElementById("furnitureList");
@@ -523,10 +624,25 @@ async function loadFurniture() {
     const data = d.data();
 
     let empName = "—";
+    let chain = { employee: null, section: null, department: null, institution: null };
+
     if (data.employee) {
       const eSnap = await getDoc(data.employee);
-      empName = eSnap.exists() ? eSnap.data().name : "—";
+      if (eSnap.exists()) {
+        empName = eSnap.data().name;
+        const hRef = eSnap.data().hierarchy;
+        const hChain = await getHierarchyChain(hRef);
+
+        chain = {
+          employee: data.employee.id,
+          section: hChain.section?.id,
+          department: hChain.department?.id,
+          institution: hChain.institution?.id
+        };
+      }
     }
+
+    if (!passesFilter(chain)) continue;
 
     list.innerHTML += `
       <div class="card p-2 mb-2">
@@ -569,18 +685,10 @@ function reloadAll() {
   loadEmployeesSelect("deptManagerSelect");
   loadEmployeesSelect("divManagerSelect");
 
-  // تحميل الموظفين للأصول
-  loadEmployeesSelect("deviceEmployeeSelect");
-  loadEmployeesSelect("vehicleEmployeeSelect");
-  loadEmployeesSelect("furnitureEmployeeSelect");
-
   // تحميل الأصول
   loadDevices();
   loadVehicles();
   loadFurniture();
-
-  // تحميل الترويسة
-  filterLoadInstitutions();
 }
 
 window.onload = reloadAll;
