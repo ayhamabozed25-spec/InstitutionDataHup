@@ -70,9 +70,9 @@ async function deleteHierarchy(id) {
 
 /* ------------------ تحميل المؤسسات / الأقسام / الشعب ------------------ */
 
-window.loadInstitutions = () => loadHierarchy("Institution", "orgList");
-window.loadDepartments = () => loadHierarchy("Department", "deptList");
-window.loadSections = () => loadHierarchy("Section", "divList");
+function loadInstitutions() { loadHierarchy("Institution", "orgList"); }
+function loadDepartments() { loadHierarchy("Department", "deptList"); }
+function loadSections() { loadHierarchy("Section", "divList"); }
 
 /* ------------------ تحميل القوائم المنسدلة ------------------ */
 
@@ -91,7 +91,7 @@ async function loadSelect(type, selectId) {
 
 /* ------------------ إضافة موظف ------------------ */
 
-window.addEmployee = async function () {
+async function addEmployee() {
   const name = document.getElementById("empName").value;
   const hierarchyId = document.getElementById("empHierarchySelect").value;
 
@@ -104,11 +104,11 @@ window.addEmployee = async function () {
 
   document.getElementById("empName").value = "";
   loadEmployees();
-};
+}
 
 /* ------------------ عرض الموظفين ------------------ */
 
-window.loadEmployees = async function () {
+async function loadEmployees() {
   const list = document.getElementById("empList");
   list.innerHTML = "";
 
@@ -133,16 +133,16 @@ window.loadEmployees = async function () {
       </div>
     `;
   }
-};
+}
 
-window.deleteEmployee = async function (id) {
+async function deleteEmployee(id) {
   await deleteDoc(doc(db, "Employees", id));
   loadEmployees();
-};
+}
 
 /* ------------------ مودال التعديل ------------------ */
 
-window.openEdit = async function (id, type) {
+async function openEdit(id, type) {
   document.getElementById("editId").value = id;
   document.getElementById("editType").value = type;
 
@@ -150,6 +150,7 @@ window.openEdit = async function (id, type) {
   const select = document.getElementById("editSelect");
 
   select.innerHTML = "";
+  select.style.display = "block";
 
   if (type === "Institution") {
     const snap = await getDoc(doc(db, "Hierarchy", id));
@@ -163,8 +164,7 @@ window.openEdit = async function (id, type) {
     nameInput.value = snap.data().name;
 
     if (snap.data().parent) {
-      const parentId = snap.data().parent.id;
-      select.value = parentId;
+      select.value = snap.data().parent.id;
     }
   }
 
@@ -174,8 +174,7 @@ window.openEdit = async function (id, type) {
     nameInput.value = snap.data().name;
 
     if (snap.data().parent) {
-      const parentId = snap.data().parent.id;
-      select.value = parentId;
+      select.value = snap.data().parent.id;
     }
   }
 
@@ -190,11 +189,11 @@ window.openEdit = async function (id, type) {
   }
 
   new bootstrap.Modal(document.getElementById("editModal")).show();
-};
+}
 
 /* ------------------ حفظ التعديل ------------------ */
 
-window.saveEdit = async function () {
+async function saveEdit() {
   const id = document.getElementById("editId").value;
   const type = document.getElementById("editType").value;
   const name = document.getElementById("editName").value;
@@ -215,7 +214,7 @@ window.saveEdit = async function () {
   }
 
   bootstrap.Modal.getInstance(document.getElementById("editModal")).hide();
-};
+}
 
 /* ------------------ تحميل كل البيانات ------------------ */
 
@@ -232,10 +231,12 @@ function reloadAll() {
 
 window.onload = reloadAll;
 
+/* ------------------ ربط الدوال بالـ window ------------------ */
 
 window.addHierarchy = addHierarchy;
 window.deleteHierarchy = deleteHierarchy;
 
+window.loadHierarchy = loadHierarchy;
 window.loadInstitutions = loadInstitutions;
 window.loadDepartments = loadDepartments;
 window.loadSections = loadSections;
@@ -247,4 +248,3 @@ window.deleteEmployee = deleteEmployee;
 window.openEdit = openEdit;
 window.saveEdit = saveEdit;
 window.reloadAll = reloadAll;
-
