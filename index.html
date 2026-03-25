@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <title>نظام CRUD للمؤسسات</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <h1>نظام إدارة المؤسسات</h1>
+
+  <!-- نموذج إضافة مؤسسة -->
+  <section>
+    <h2>إضافة مؤسسة</h2>
+    <input id="orgName" placeholder="اسم المؤسسة">
+    <button onclick="addOrganization()">إضافة</button>
+  </section>
+
+  <hr>
+
+  <!-- عرض المؤسسات -->
+  <section>
+    <h2>قائمة المؤسسات</h2>
+    <div id="orgList"></div>
+  </section>
+
+  <script type="module" src="firebase.js"></script>
+  <script type="module" src="crud.js"></script>
+
+</body>
+</html>
