@@ -11,7 +11,6 @@
     .page { display: none; }
     .active-page { display: block; }
 
-    /* Sticky Header */
     #filterHeader {
       position: sticky;
       top: 0;
@@ -44,7 +43,7 @@
     </div>
   </nav>
 
-  <!-- Sticky Header Filters (ONLY for assets pages) -->
+  <!-- Sticky Header Filters -->
   <div id="filterHeader" class="card p-3 mb-4" style="display:none;">
     <h5 class="mb-3">التصفية</h5>
 
@@ -77,7 +76,12 @@
     <div class="card mb-4">
       <div class="card-header">إضافة قسم</div>
       <div class="card-body">
+
         <input id="deptName" class="form-control mb-2" placeholder="اسم القسم">
+
+        <label>رئيس القسم</label>
+        <select id="deptManagerSelect" class="form-select mb-2"></select>
+
         <button class="btn btn-primary" onclick="addDepartment()">إضافة</button>
       </div>
     </div>
@@ -86,8 +90,15 @@
     <div class="card mb-4">
       <div class="card-header">إضافة شعبة</div>
       <div class="card-body">
+
         <input id="divName" class="form-control mb-2" placeholder="اسم الشعبة">
+
+        <label>القسم التابع له</label>
         <select id="divDeptSelect" class="form-select mb-2"></select>
+
+        <label>رئيس الشعبة</label>
+        <select id="divManagerSelect" class="form-select mb-2"></select>
+
         <button class="btn btn-primary" onclick="addSection()">إضافة</button>
       </div>
     </div>
