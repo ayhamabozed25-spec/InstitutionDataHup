@@ -65,15 +65,15 @@ async function filterLoadInstitutions() {
   select.innerHTML = "<option value=''>اختر مؤسسة</option>";
 
   const snap = await getDocs(collection(db, "Hierarchy"));
+
   snap.forEach(d => {
     const data = d.data();
     if (data.type === "Institution") {
       select.innerHTML += `<option value="${d.id}">${data.name}</option>`;
     }
   });
-
-  filterLoadDepartments();
 }
+
 
 /* ---------------------------------------------------
    تحميل الأقسام بناءً على المؤسسة
@@ -290,18 +290,29 @@ function loadSections() { loadHierarchy("Section", "divList"); }
 --------------------------------------------------- */
 async function addEmployee() {
   const name = document.getElementById("empName").value;
-  const hierarchyId = document.getElementById("empHierarchySelect").value;
+  const deptId = document.getElementById("empDeptSelect").value;
+  const secId  = document.getElementById("empSectionSelect").value;
 
-  if (!name.trim() || !hierarchyId) return alert("أدخل البيانات كاملة");
+  if (!name.trim() || !deptId)
+    return alert("يجب اختيار قسم على الأقل");
+
+  let hierarchyRef;
+
+  if (secId) {
+    hierarchyRef = doc(db, "Hierarchy", secId);
+  } else {
+    hierarchyRef = doc(db, "Hierarchy", deptId);
+  }
 
   await addDoc(collection(db, "Employees"), {
     name,
-    hierarchy: doc(db, "Hierarchy", hierarchyId)
+    hierarchy: hierarchyRef
   });
 
   document.getElementById("empName").value = "";
   loadEmployees();
 }
+
 
 /* ---------------------------------------------------
    عرض الموظفين مع الفلترة الصارمة
@@ -655,6 +666,24 @@ async function loadFurniture() {
   }
 }
 
+async function loadSectionsForEmployee() {
+  const deptId = document.getElementById("empDeptSelect").value;
+  const select = document.getElementById("empSectionSelect");
+
+  select.innerHTML = "<option value=''>بدون شعبة</option>";
+
+  if (!deptId) return;
+
+  const snap = await getDocs(collection(db, "Hierarchy"));
+  snap.forEach(d => {
+    const data = d.data();
+    if (data.type === "Section" && data.parent?.id === deptId) {
+      select.innerHTML += `<option value="${d.id}">${data.name}</option>`;
+    }
+  });
+}
+
+
 /* ---------------------------------------------------
    حذف أثاث
 --------------------------------------------------- */
@@ -666,30 +695,34 @@ async function deleteFurniture(id) {
 /* ---------------------------------------------------
    تحميل كل البيانات عند تشغيل الصفحة
 --------------------------------------------------- */
-function reloadAll() {
-  // الهيكلية
+async function reloadAll() {
+
+  // تحميل الترويسة أولاً
+  await filterLoadInstitutions();
+
+  // الآن طبق الفلترة
   loadInstitutions();
   loadDepartments();
   loadSections();
-
-  // الموظفين
   loadEmployees();
 
-  // تحميل القوائم المنسدلة
-  loadSelect("Institution", "deptOrgSelect");
-  loadSelect("Department", "divDeptSelect");
-  loadSelect("Section", "empHierarchySelect");
-
-  // تحميل الموظفين للمديرين
-  loadEmployeesSelect("orgManagerSelect");
-  loadEmployeesSelect("deptManagerSelect");
-  loadEmployeesSelect("divManagerSelect");
-
-  // تحميل الأصول
   loadDevices();
   loadVehicles();
   loadFurniture();
+
+  // تحميل قوائم الهيكلية
+  loadSelect("Institution", "deptOrgSelect");
+  loadSelect("Department", "divDeptSelect");
+
+  // تحميل الأقسام للموظفين
+  loadSelect("Department", "empDeptSelect");
+
+  // تحميل المديرين
+  loadEmployeesSelect("orgManagerSelect");
+  loadEmployeesSelect("deptManagerSelect");
+  loadEmployeesSelect("divManagerSelect");
 }
+
 
 window.onload = reloadAll;
 
