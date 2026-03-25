@@ -231,3 +231,6 @@ function reloadAll() {
 }
 
 window.onload = reloadAll;
+
+window.addHierarchy = addHierarchy;
+
