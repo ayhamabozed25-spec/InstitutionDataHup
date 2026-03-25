@@ -5,233 +5,188 @@ import {
   getDocs,
   deleteDoc,
   updateDoc,
-  doc
+  doc,
+  getDoc
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+/* ------------------ تحميل الهيكلية ------------------ */
+
+async function loadHierarchy(type, listElementId) {
+  const list = document.getElementById(listElementId);
+  list.innerHTML = "";
+
+  const snap = await getDocs(collection(db, "Hierarchy"));
+
+  for (const d of snap.docs) {
+    const data = d.data();
+    if (data.type !== type) continue;
+
+    let parentName = "—";
+
+    if (data.parent) {
+      const parentSnap = await getDoc(data.parent);
+      parentName = parentSnap.exists() ? parentSnap.data().name : "—";
+    }
+
+    list.innerHTML += `
+      <div class="card p-2 mb-2">
+        <b>${data.name}</b> — الأب: ${parentName}
+        <div>
+          <button class="btn btn-sm btn-warning" onclick="openEdit('${d.id}','${type}')">تعديل</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteHierarchy('${d.id}')">حذف</button>
+        </div>
+      </div>
+    `;
+  }
+}
+
+/* ------------------ إضافة عنصر للهيكلية ------------------ */
+
+async function addHierarchy(type, nameInputId, parentSelectId) {
+  const name = document.getElementById(nameInputId).value;
+  const parentId = parentSelectId ? document.getElementById(parentSelectId).value : "";
+
+  if (!name.trim()) return alert("أدخل الاسم");
+
+  const parentRef = parentId ? doc(db, "Hierarchy", parentId) : null;
+
+  await addDoc(collection(db, "Hierarchy"), {
+    name,
+    type,
+    parent: parentRef
+  });
+
+  document.getElementById(nameInputId).value = "";
+
+  reloadAll();
+}
+
+/* ------------------ حذف عنصر ------------------ */
+
+async function deleteHierarchy(id) {
+  await deleteDoc(doc(db, "Hierarchy", id));
+  reloadAll();
+}
+
+/* ------------------ تحميل المؤسسات / الأقسام / الشعب ------------------ */
+
+window.loadInstitutions = () => loadHierarchy("Institution", "orgList");
+window.loadDepartments = () => loadHierarchy("Department", "deptList");
+window.loadSections = () => loadHierarchy("Section", "divList");
 
 /* ------------------ تحميل القوائم المنسدلة ------------------ */
 
-async function loadOrgSelect() {
-  const snap = await getDocs(collection(db, "Institutions"));
-  const select = document.getElementById("deptOrgSelect");
-  select.innerHTML = "<option value=''>اختر مؤسسة</option>";
+async function loadSelect(type, selectId) {
+  const snap = await getDocs(collection(db, "Hierarchy"));
+  const select = document.getElementById(selectId);
+  select.innerHTML = "<option value=''>اختر</option>";
 
-  snap.forEach(d => {
-    select.innerHTML += `<option value="${d.id}">${d.data().name}</option>`;
-  });
-}
-
-async function loadDeptSelect() {
-  const snap = await getDocs(collection(db, "Departments"));
-  const select = document.getElementById("divDeptSelect");
-  select.innerHTML = "<option value=''>اختر قسم</option>";
-
-  snap.forEach(d => {
-    select.innerHTML += `<option value="${d.id}">${d.data().name}</option>`;
-  });
-}
-
-async function loadDivSelect() {
-  const snap = await getDocs(collection(db, "Sections"));
-  const select = document.getElementById("empDivSelect");
-  select.innerHTML = "<option value=''>اختر شعبة</option>";
-
-  snap.forEach(d => {
-    select.innerHTML += `<option value="${d.id}">${d.data().name}</option>`;
-  });
-}
-
-/* ------------------ إضافة مؤسسة ------------------ */
-
-export async function addOrganization() {
-  const name = document.getElementById("orgName").value;
-  if (!name.trim()) return alert("أدخل اسم المؤسسة");
-
-  await addDoc(collection(db, "Institutions"), { name });
-  document.getElementById("orgName").value = "";
-  loadOrganizations();
-}
-
-/* ------------------ عرض المؤسسات ------------------ */
-
-export async function loadOrganizations() {
-  const list = document.getElementById("orgList");
-  list.innerHTML = "";
-
-  const snap = await getDocs(collection(db, "Institutions"));
   snap.forEach(d => {
     const data = d.data();
-    list.innerHTML += `
-      <div class="card p-2 mb-2">
-        <b>${data.name}</b>
-        <div>
-          <button class="btn btn-sm btn-warning" onclick="openEdit('${d.id}','Institutions','${data.name}')">تعديل</button>
-          <button class="btn btn-sm btn-danger" onclick="deleteOrganization('${d.id}')">حذف</button>
-        </div>
-      </div>
-    `;
+    if (data.type === type) {
+      select.innerHTML += `<option value="${d.id}">${data.name}</option>`;
+    }
   });
-}
-
-export async function deleteOrganization(id) {
-  await deleteDoc(doc(db, "Institutions", id));
-  loadOrganizations();
-}
-
-/* ------------------ إضافة قسم ------------------ */
-
-export async function addDepartment() {
-  const name = document.getElementById("deptName").value;
-  const orgId = document.getElementById("deptOrgSelect").value;
-
-  if (!name.trim() || !orgId) return alert("أدخل البيانات كاملة");
-
-  await addDoc(collection(db, "Departments"), {
-    name,
-    organizationId: orgId
-  });
-
-  document.getElementById("deptName").value = "";
-  loadDepartments();
-}
-
-/* ------------------ عرض الأقسام ------------------ */
-
-export async function loadDepartments() {
-  const list = document.getElementById("deptList");
-  list.innerHTML = "";
-
-  const snap = await getDocs(collection(db, "Departments"));
-  snap.forEach(d => {
-    const data = d.data();
-    list.innerHTML += `
-      <div class="card p-2 mb-2">
-        <b>${data.name}</b> — مؤسسة: ${data.organizationId}
-        <div>
-          <button class="btn btn-sm btn-warning" onclick="openEdit('${d.id}','Departments','${data.name}','${data.organizationId}')">تعديل</button>
-          <button class="btn btn-sm btn-danger" onclick="deleteDepartment('${d.id}')">حذف</button>
-        </div>
-      </div>
-    `;
-  });
-}
-
-export async function deleteDepartment(id) {
-  await deleteDoc(doc(db, "Departments", id));
-  loadDepartments();
-}
-
-/* ------------------ إضافة شعبة ------------------ */
-
-export async function addDivision() {
-  const name = document.getElementById("divName").value;
-  const deptId = document.getElementById("divDeptSelect").value;
-
-  if (!name.trim() || !deptId) return alert("أدخل البيانات كاملة");
-
-  await addDoc(collection(db, "Sections"), {
-    name,
-    departmentId: deptId
-  });
-
-  document.getElementById("divName").value = "";
-  loadDivisions();
-}
-
-/* ------------------ عرض الشعب ------------------ */
-
-export async function loadDivisions() {
-  const list = document.getElementById("divList");
-  list.innerHTML = "";
-
-  const snap = await getDocs(collection(db, "Sections"));
-  snap.forEach(d => {
-    const data = d.data();
-    list.innerHTML += `
-      <div class="card p-2 mb-2">
-        <b>${data.name}</b> — قسم: ${data.departmentId}
-        <div>
-          <button class="btn btn-sm btn-warning" onclick="openEdit('${d.id}','Sections','${data.name}','${data.departmentId}')">تعديل</button>
-          <button class="btn btn-sm btn-danger" onclick="deleteDivision('${d.id}')">حذف</button>
-        </div>
-      </div>
-    `;
-  });
-}
-
-export async function deleteDivision(id) {
-  await deleteDoc(doc(db, "Sections", id));
-  loadDivisions();
 }
 
 /* ------------------ إضافة موظف ------------------ */
 
-export async function addEmployee() {
+window.addEmployee = async function () {
   const name = document.getElementById("empName").value;
-  const divId = document.getElementById("empDivSelect").value;
+  const hierarchyId = document.getElementById("empHierarchySelect").value;
 
-  if (!name.trim() || !divId) return alert("أدخل البيانات كاملة");
+  if (!name.trim() || !hierarchyId) return alert("أدخل البيانات كاملة");
 
   await addDoc(collection(db, "Employees"), {
     name,
-    divisionId: divId
+    hierarchy: doc(db, "Hierarchy", hierarchyId)
   });
 
   document.getElementById("empName").value = "";
   loadEmployees();
-}
+};
 
 /* ------------------ عرض الموظفين ------------------ */
 
-export async function loadEmployees() {
+window.loadEmployees = async function () {
   const list = document.getElementById("empList");
   list.innerHTML = "";
 
   const snap = await getDocs(collection(db, "Employees"));
-  snap.forEach(d => {
+
+  for (const d of snap.docs) {
     const data = d.data();
+
+    let hierarchyName = "—";
+    if (data.hierarchy) {
+      const hSnap = await getDoc(data.hierarchy);
+      hierarchyName = hSnap.exists() ? hSnap.data().name : "—";
+    }
+
     list.innerHTML += `
       <div class="card p-2 mb-2">
-        <b>${data.name}</b> — شعبة: ${data.divisionId}
+        <b>${data.name}</b> — مرتبط بـ: ${hierarchyName}
         <div>
-          <button class="btn btn-sm btn-warning" onclick="openEdit('${d.id}','Employees','${data.name}','${data.divisionId}')">تعديل</button>
+          <button class="btn btn-sm btn-warning" onclick="openEdit('${d.id}','Employee')">تعديل</button>
           <button class="btn btn-sm btn-danger" onclick="deleteEmployee('${d.id}')">حذف</button>
         </div>
       </div>
     `;
-  });
-}
+  }
+};
 
-export async function deleteEmployee(id) {
+window.deleteEmployee = async function (id) {
   await deleteDoc(doc(db, "Employees", id));
   loadEmployees();
-}
+};
 
-/* ------------------ فتح مودال التعديل ------------------ */
+/* ------------------ مودال التعديل ------------------ */
 
-window.openEdit = async function (id, type, name, relationId = "") {
+window.openEdit = async function (id, type) {
   document.getElementById("editId").value = id;
   document.getElementById("editType").value = type;
-  document.getElementById("editName").value = name;
 
+  const nameInput = document.getElementById("editName");
   const select = document.getElementById("editSelect");
+
   select.innerHTML = "";
 
-  if (type === "Departments") {
-    await loadOrgSelect();
-    select.innerHTML = document.getElementById("deptOrgSelect").innerHTML;
-    select.value = relationId;
+  if (type === "Institution") {
+    const snap = await getDoc(doc(db, "Hierarchy", id));
+    nameInput.value = snap.data().name;
+    select.style.display = "none";
   }
 
-  if (type === "Sections") {
-    await loadDeptSelect();
-    select.innerHTML = document.getElementById("divDeptSelect").innerHTML;
-    select.value = relationId;
+  if (type === "Department") {
+    await loadSelect("Institution", "editSelect");
+    const snap = await getDoc(doc(db, "Hierarchy", id));
+    nameInput.value = snap.data().name;
+
+    if (snap.data().parent) {
+      const parentId = snap.data().parent.id;
+      select.value = parentId;
+    }
   }
 
-  if (type === "Employees") {
-    await loadDivSelect();
-    select.innerHTML = document.getElementById("empDivSelect").innerHTML;
-    select.value = relationId;
+  if (type === "Section") {
+    await loadSelect("Department", "editSelect");
+    const snap = await getDoc(doc(db, "Hierarchy", id));
+    nameInput.value = snap.data().name;
+
+    if (snap.data().parent) {
+      const parentId = snap.data().parent.id;
+      select.value = parentId;
+    }
+  }
+
+  if (type === "Employee") {
+    await loadSelect("Section", "editSelect");
+    const snap = await getDoc(doc(db, "Employees", id));
+    nameInput.value = snap.data().name;
+
+    if (snap.data().hierarchy) {
+      select.value = snap.data().hierarchy.id;
+    }
   }
 
   new bootstrap.Modal(document.getElementById("editModal")).show();
@@ -243,57 +198,36 @@ window.saveEdit = async function () {
   const id = document.getElementById("editId").value;
   const type = document.getElementById("editType").value;
   const name = document.getElementById("editName").value;
-  const relation = document.getElementById("editSelect").value;
+  const parentId = document.getElementById("editSelect").value;
 
-  const ref = doc(db, type, id);
-
-  if (type === "Institutions") {
-    await updateDoc(ref, { name });
-    loadOrganizations();
-  }
-
-  if (type === "Departments") {
-    await updateDoc(ref, { name, InstitutionId: relation });
-    loadDepartments();
-  }
-
-  if (type === "Sections") {
-    await updateDoc(ref, { name, DepartmentId: relation });
-    loadDivisions();
-  }
-
-  if (type === "Employees") {
-    await updateDoc(ref, { name, SectionionId: relation });
+  if (type === "Employee") {
+    await updateDoc(doc(db, "Employees", id), {
+      name,
+      hierarchy: doc(db, "Hierarchy", parentId)
+    });
     loadEmployees();
+  } else {
+    await updateDoc(doc(db, "Hierarchy", id), {
+      name,
+      parent: parentId ? doc(db, "Hierarchy", parentId) : null
+    });
+    reloadAll();
   }
 
   bootstrap.Modal.getInstance(document.getElementById("editModal")).hide();
 };
 
-/* ------------------ تحميل البيانات عند فتح الصفحة ------------------ */
+/* ------------------ تحميل كل البيانات ------------------ */
 
-window.onload = () => {
-  loadOrganizations();
+function reloadAll() {
+  loadInstitutions();
   loadDepartments();
-  loadDivisions();
+  loadSections();
   loadEmployees();
 
-  loadOrgSelect();
-  loadDeptSelect();
-  loadDivSelect();
-};
-window.addOrganization = addOrganization;
-window.deleteOrganization = deleteOrganization;
+  loadSelect("Institution", "deptOrgSelect");
+  loadSelect("Department", "divDeptSelect");
+  loadSelect("Section", "empHierarchySelect");
+}
 
-window.addDepartment = addDepartment;
-window.deleteDepartment = deleteDepartment;
-
-window.addDivision = addDivision;
-window.deleteDivision = deleteDivision;
-
-window.addEmployee = addEmployee;
-window.deleteEmployee = deleteEmployee;
-
-window.openEdit = openEdit;
-window.saveEdit = saveEdit;
-
+window.onload = reloadAll;
