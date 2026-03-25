@@ -232,5 +232,19 @@ function reloadAll() {
 
 window.onload = reloadAll;
 
+
 window.addHierarchy = addHierarchy;
+window.deleteHierarchy = deleteHierarchy;
+
+window.loadInstitutions = loadInstitutions;
+window.loadDepartments = loadDepartments;
+window.loadSections = loadSections;
+
+window.addEmployee = addEmployee;
+window.loadEmployees = loadEmployees;
+window.deleteEmployee = deleteEmployee;
+
+window.openEdit = openEdit;
+window.saveEdit = saveEdit;
+window.reloadAll = reloadAll;
 
