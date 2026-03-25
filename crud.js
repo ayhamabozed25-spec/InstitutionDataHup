@@ -9,8 +9,154 @@ import {
   getDoc
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-/* ------------------ تحميل الهيكلية ------------------ */
+/* ---------------------------------------------------
+   دالة مساعدة: جلب سلسلة الهيكلية (شعبة → قسم → مؤسسة)
+--------------------------------------------------- */
+async function getHierarchyChain(sectionRef) {
+  const chain = { section: null, department: null, institution: null };
 
+  if (!sectionRef) return chain;
+
+  const secSnap = await getDoc(sectionRef);
+  if (!secSnap.exists()) return chain;
+
+  chain.section = { id: sectionRef.id, ...secSnap.data() };
+
+  const deptRef = secSnap.data().parent;
+  if (!deptRef) return chain;
+
+  const deptSnap = await getDoc(deptRef);
+  chain.department = { id: deptRef.id, ...deptSnap.data() };
+
+  const instRef = deptSnap.data().parent;
+  if (!instRef) return chain;
+
+  const instSnap = await getDoc(instRef);
+  chain.institution = { id: instRef.id, ...instSnap.data() };
+
+  return chain;
+}
+
+/* ---------------------------------------------------
+   تحميل المؤسسات في الترويسة
+--------------------------------------------------- */
+async function filterLoadInstitutions() {
+  const select = document.getElementById("filterInstitution");
+  select.innerHTML = "<option value=''>اختر مؤسسة</option>";
+
+  const snap = await getDocs(collection(db, "Hierarchy"));
+  snap.forEach(d => {
+    const data = d.data();
+    if (data.type === "Institution") {
+      select.innerHTML += `<option value="${d.id}">${data.name}</option>`;
+    }
+  });
+
+  filterLoadDepartments();
+}
+
+/* ---------------------------------------------------
+   تحميل الأقسام بناءً على المؤسسة
+--------------------------------------------------- */
+async function filterLoadDepartments() {
+  const instId = document.getElementById("filterInstitution").value;
+  const select = document.getElementById("filterDepartment");
+  select.innerHTML = "<option value=''>اختر قسم</option>";
+
+  if (!instId) {
+    filterLoadSections();
+    return;
+  }
+
+  const snap = await getDocs(collection(db, "Hierarchy"));
+  snap.forEach(d => {
+    const data = d.data();
+    if (data.type === "Department" && data.parent?.id === instId) {
+      select.innerHTML += `<option value="${d.id}">${data.name}</option>`;
+    }
+  });
+
+  filterLoadSections();
+}
+
+/* ---------------------------------------------------
+   تحميل الشعب بناءً على القسم
+--------------------------------------------------- */
+async function filterLoadSections() {
+  const deptId = document.getElementById("filterDepartment").value;
+  const select = document.getElementById("filterSection");
+  select.innerHTML = "<option value=''>اختر شعبة</option>";
+
+  if (!deptId) {
+    filterLoadEmployees();
+    return;
+  }
+
+  const snap = await getDocs(collection(db, "Hierarchy"));
+  snap.forEach(d => {
+    const data = d.data();
+    if (data.type === "Section" && data.parent?.id === deptId) {
+      select.innerHTML += `<option value="${d.id}">${data.name}</option>`;
+    }
+  });
+
+  filterLoadEmployees();
+}
+
+/* ---------------------------------------------------
+   تحميل الموظفين بناءً على الشعبة
+--------------------------------------------------- */
+async function filterLoadEmployees() {
+  const secId = document.getElementById("filterSection").value;
+  const select = document.getElementById("filterEmployee");
+  select.innerHTML = "<option value=''>اختر موظف</option>";
+
+  if (!secId) return;
+
+  const snap = await getDocs(collection(db, "Employees"));
+  snap.forEach(d => {
+    const data = d.data();
+    if (data.hierarchy?.id === secId) {
+      select.innerHTML += `<option value="${d.id}">${data.name}</option>`;
+    }
+  });
+}
+
+/* ---------------------------------------------------
+   تحميل الموظفين لأي قائمة (مدير – جهاز – مركبة – أثاث)
+--------------------------------------------------- */
+async function loadEmployeesSelect(selectId) {
+  const select = document.getElementById(selectId);
+  if (!select) return;
+
+  select.innerHTML = "<option value=''>اختر موظف</option>";
+
+  const snap = await getDocs(collection(db, "Employees"));
+  snap.forEach(d => {
+    select.innerHTML += `<option value="${d.id}">${d.data().name}</option>`;
+  });
+}
+
+/* ---------------------------------------------------
+   تحميل الهيكلية حسب النوع (مؤسسة – قسم – شعبة)
+--------------------------------------------------- */
+async function loadSelect(type, selectId) {
+  const select = document.getElementById(selectId);
+  if (!select) return;
+
+  select.innerHTML = "<option value=''>اختر</option>";
+
+  const snap = await getDocs(collection(db, "Hierarchy"));
+  snap.forEach(d => {
+    const data = d.data();
+    if (data.type === type) {
+      select.innerHTML += `<option value="${d.id}">${data.name}</option>`;
+    }
+  });
+}
+/* ---------------------------------------------------
+   تحميل الهيكلية (مؤسسة – قسم – شعبة)
+--------------------------------------------------- */
 async function loadHierarchy(type, listElementId) {
   const list = document.getElementById(listElementId);
   list.innerHTML = "";
@@ -21,12 +167,14 @@ async function loadHierarchy(type, listElementId) {
     const data = d.data();
     if (data.type !== type) continue;
 
+    // اسم الأب
     let parentName = "—";
     if (data.parent) {
       const parentSnap = await getDoc(data.parent);
       parentName = parentSnap.exists() ? parentSnap.data().name : "—";
     }
 
+    // اسم المدير
     let managerName = "—";
     if (data.manager) {
       const managerSnap = await getDoc(data.manager);
@@ -46,8 +194,9 @@ async function loadHierarchy(type, listElementId) {
   }
 }
 
-/* ------------------ إضافة عنصر للهيكلية ------------------ */
-
+/* ---------------------------------------------------
+   إضافة مؤسسة / قسم / شعبة
+--------------------------------------------------- */
 async function addHierarchy(type, nameInputId, parentSelectId, managerSelectId) {
   const name = document.getElementById(nameInputId).value;
   const parentId = parentSelectId ? document.getElementById(parentSelectId).value : "";
@@ -70,53 +219,24 @@ async function addHierarchy(type, nameInputId, parentSelectId, managerSelectId) 
   reloadAll();
 }
 
-/* ------------------ حذف عنصر ------------------ */
-
+/* ---------------------------------------------------
+   حذف عنصر من الهيكلية
+--------------------------------------------------- */
 async function deleteHierarchy(id) {
   await deleteDoc(doc(db, "Hierarchy", id));
   reloadAll();
 }
 
-/* ------------------ تحميل المؤسسات / الأقسام / الشعب ------------------ */
-
+/* ---------------------------------------------------
+   تحميل المؤسسات / الأقسام / الشعب
+--------------------------------------------------- */
 function loadInstitutions() { loadHierarchy("Institution", "orgList"); }
 function loadDepartments() { loadHierarchy("Department", "deptList"); }
 function loadSections() { loadHierarchy("Section", "divList"); }
 
-/* ------------------ تحميل القوائم المنسدلة للهيكلية ------------------ */
-
-async function loadSelect(type, selectId) {
-  const select = document.getElementById(selectId);
-  if (!select) return;
-
-  const snap = await getDocs(collection(db, "Hierarchy"));
-  select.innerHTML = "<option value=''>اختر</option>";
-
-  snap.forEach(d => {
-    const data = d.data();
-    if (data.type === type) {
-      select.innerHTML += `<option value="${d.id}">${data.name}</option>`;
-    }
-  });
-}
-
-/* ------------------ تحميل القوائم المنسدلة للموظفين ------------------ */
-
-async function loadEmployeesSelect(selectId) {
-  const select = document.getElementById(selectId);
-  if (!select) return;
-
-  const snap = await getDocs(collection(db, "Employees"));
-  select.innerHTML = "<option value=''>اختر موظف</option>";
-
-  snap.forEach(d => {
-    const data = d.data();
-    select.innerHTML += `<option value="${d.id}">${data.name}</option>`;
-  });
-}
-
-/* ------------------ إضافة موظف ------------------ */
-
+/* ---------------------------------------------------
+   إضافة موظف
+--------------------------------------------------- */
 async function addEmployee() {
   const name = document.getElementById("empName").value;
   const hierarchyId = document.getElementById("empHierarchySelect").value;
@@ -132,8 +252,9 @@ async function addEmployee() {
   loadEmployees();
 }
 
-/* ------------------ عرض الموظفين ------------------ */
-
+/* ---------------------------------------------------
+   عرض الموظفين
+--------------------------------------------------- */
 async function loadEmployees() {
   const list = document.getElementById("empList");
   list.innerHTML = "";
@@ -161,169 +282,17 @@ async function loadEmployees() {
   }
 }
 
+/* ---------------------------------------------------
+   حذف موظف
+--------------------------------------------------- */
 async function deleteEmployee(id) {
   await deleteDoc(doc(db, "Employees", id));
   loadEmployees();
 }
 
-/* ------------------ الأجهزة ------------------ */
-
-async function addDevice() {
-  const name = document.getElementById("deviceName").value;
-  const serial = document.getElementById("deviceSerial").value;
-  const empId = document.getElementById("deviceEmployeeSelect").value;
-
-  if (!name.trim() || !serial.trim() || !empId) return alert("أدخل البيانات كاملة");
-
-  await addDoc(collection(db, "Devices"), {
-    name,
-    serial,
-    employee: doc(db, "Employees", empId)
-  });
-
-  document.getElementById("deviceName").value = "";
-  document.getElementById("deviceSerial").value = "";
-  loadDevices();
-}
-
-async function loadDevices() {
-  const list = document.getElementById("devicesList");
-  if (!list) return;
-  list.innerHTML = "";
-
-  const snap = await getDocs(collection(db, "Devices"));
-
-  for (const d of snap.docs) {
-    const data = d.data();
-
-    let empName = "—";
-    if (data.employee) {
-      const eSnap = await getDoc(data.employee);
-      empName = eSnap.exists() ? eSnap.data().name : "—";
-    }
-
-    list.innerHTML += `
-      <div class="card p-2 mb-2">
-        <b>${data.name}</b> — سيريال: ${data.serial} — مستلم: ${empName}
-        <div class="mt-2">
-          <button class="btn btn-sm btn-danger" onclick="deleteDevice('${d.id}')">حذف</button>
-        </div>
-      </div>
-    `;
-  }
-}
-
-async function deleteDevice(id) {
-  await deleteDoc(doc(db, "Devices", id));
-  loadDevices();
-}
-
-/* ------------------ المركبات ------------------ */
-
-async function addVehicle() {
-  const plate = document.getElementById("vehiclePlate").value;
-  const model = document.getElementById("vehicleModel").value;
-  const empId = document.getElementById("vehicleEmployeeSelect").value;
-
-  if (!plate.trim() || !model.trim() || !empId) return alert("أدخل البيانات كاملة");
-
-  await addDoc(collection(db, "Vehicles"), {
-    plate,
-    model,
-    employee: doc(db, "Employees", empId)
-  });
-
-  document.getElementById("vehiclePlate").value = "";
-  document.getElementById("vehicleModel").value = "";
-  loadVehicles();
-}
-
-async function loadVehicles() {
-  const list = document.getElementById("vehiclesList");
-  if (!list) return;
-  list.innerHTML = "";
-
-  const snap = await getDocs(collection(db, "Vehicles"));
-
-  for (const d of snap.docs) {
-    const data = d.data();
-
-    let empName = "—";
-    if (data.employee) {
-      const eSnap = await getDoc(data.employee);
-      empName = eSnap.exists() ? eSnap.data().name : "—";
-    }
-
-    list.innerHTML += `
-      <div class="card p-2 mb-2">
-        <b>${data.plate}</b> — موديل: ${data.model} — مستلم: ${empName}
-        <div class="mt-2">
-          <button class="btn btn-sm btn-danger" onclick="deleteVehicle('${d.id}')">حذف</button>
-        </div>
-      </div>
-    `;
-  }
-}
-
-async function deleteVehicle(id) {
-  await deleteDoc(doc(db, "Vehicles", id));
-  loadVehicles();
-}
-
-/* ------------------ الأثاث ------------------ */
-
-async function addFurniture() {
-  const name = document.getElementById("furnitureName").value;
-  const code = document.getElementById("furnitureCode").value;
-  const empId = document.getElementById("furnitureEmployeeSelect").value;
-
-  if (!name.trim() || !code.trim() || !empId) return alert("أدخل البيانات كاملة");
-
-  await addDoc(collection(db, "Furniture"), {
-    name,
-    code,
-    employee: doc(db, "Employees", empId)
-  });
-
-  document.getElementById("furnitureName").value = "";
-  document.getElementById("furnitureCode").value = "";
-  loadFurniture();
-}
-
-async function loadFurniture() {
-  const list = document.getElementById("furnitureList");
-  if (!list) return;
-  list.innerHTML = "";
-
-  const snap = await getDocs(collection(db, "Furniture"));
-
-  for (const d of snap.docs) {
-    const data = d.data();
-
-    let empName = "—";
-    if (data.employee) {
-      const eSnap = await getDoc(data.employee);
-      empName = eSnap.exists() ? eSnap.data().name : "—";
-    }
-
-    list.innerHTML += `
-      <div class="card p-2 mb-2">
-        <b>${data.name}</b> — كود: ${data.code} — مستلم: ${empName}
-        <div class="mt-2">
-          <button class="btn btn-sm btn-danger" onclick="deleteFurniture('${d.id}')">حذف</button>
-        </div>
-      </div>
-    `;
-  }
-}
-
-async function deleteFurniture(id) {
-  await deleteDoc(doc(db, "Furniture", id));
-  loadFurniture();
-}
-
-/* ------------------ مودال التعديل (هيكلية + موظفين) ------------------ */
-
+/* ---------------------------------------------------
+   فتح نافذة التعديل (هيكلية + موظفين)
+--------------------------------------------------- */
 async function openEdit(id, type) {
   document.getElementById("editId").value = id;
   document.getElementById("editType").value = type;
@@ -373,8 +342,9 @@ async function openEdit(id, type) {
   new bootstrap.Modal(document.getElementById("editModal")).show();
 }
 
-/* ------------------ حفظ التعديل ------------------ */
-
+/* ---------------------------------------------------
+   حفظ التعديل
+--------------------------------------------------- */
 async function saveEdit() {
   const id = document.getElementById("editId").value;
   const type = document.getElementById("editType").value;
@@ -397,36 +367,227 @@ async function saveEdit() {
 
   bootstrap.Modal.getInstance(document.getElementById("editModal")).hide();
 }
+/* ---------------------------------------------------
+   إضافة جهاز
+--------------------------------------------------- */
+async function addDevice() {
+  const name = document.getElementById("deviceName").value;
+  const serial = document.getElementById("deviceSerial").value;
+  const empId = document.getElementById("deviceEmployeeSelect").value;
 
-/* ------------------ تحميل كل البيانات ------------------ */
+  if (!name.trim() || !serial.trim() || !empId)
+    return alert("أدخل البيانات كاملة");
 
+  await addDoc(collection(db, "Devices"), {
+    name,
+    serial,
+    employee: doc(db, "Employees", empId)
+  });
+
+  document.getElementById("deviceName").value = "";
+  document.getElementById("deviceSerial").value = "";
+  loadDevices();
+}
+
+/* ---------------------------------------------------
+   عرض الأجهزة
+--------------------------------------------------- */
+async function loadDevices() {
+  const list = document.getElementById("devicesList");
+  if (!list) return;
+  list.innerHTML = "";
+
+  const snap = await getDocs(collection(db, "Devices"));
+
+  for (const d of snap.docs) {
+    const data = d.data();
+
+    let empName = "—";
+    if (data.employee) {
+      const eSnap = await getDoc(data.employee);
+      empName = eSnap.exists() ? eSnap.data().name : "—";
+    }
+
+    list.innerHTML += `
+      <div class="card p-2 mb-2">
+        <b>${data.name}</b> — سيريال: ${data.serial} — مستلم: ${empName}
+        <div class="mt-2">
+          <button class="btn btn-sm btn-danger" onclick="deleteDevice('${d.id}')">حذف</button>
+        </div>
+      </div>
+    `;
+  }
+}
+
+/* ---------------------------------------------------
+   حذف جهاز
+--------------------------------------------------- */
+async function deleteDevice(id) {
+  await deleteDoc(doc(db, "Devices", id));
+  loadDevices();
+}
+
+/* ---------------------------------------------------
+   إضافة مركبة
+--------------------------------------------------- */
+async function addVehicle() {
+  const plate = document.getElementById("vehiclePlate").value;
+  const model = document.getElementById("vehicleModel").value;
+  const empId = document.getElementById("vehicleEmployeeSelect").value;
+
+  if (!plate.trim() || !model.trim() || !empId)
+    return alert("أدخل البيانات كاملة");
+
+  await addDoc(collection(db, "Vehicles"), {
+    plate,
+    model,
+    employee: doc(db, "Employees", empId)
+  });
+
+  document.getElementById("vehiclePlate").value = "";
+  document.getElementById("vehicleModel").value = "";
+  loadVehicles();
+}
+
+/* ---------------------------------------------------
+   عرض المركبات
+--------------------------------------------------- */
+async function loadVehicles() {
+  const list = document.getElementById("vehiclesList");
+  if (!list) return;
+  list.innerHTML = "";
+
+  const snap = await getDocs(collection(db, "Vehicles"));
+
+  for (const d of snap.docs) {
+    const data = d.data();
+
+    let empName = "—";
+    if (data.employee) {
+      const eSnap = await getDoc(data.employee);
+      empName = eSnap.exists() ? eSnap.data().name : "—";
+    }
+
+    list.innerHTML += `
+      <div class="card p-2 mb-2">
+        <b>${data.plate}</b> — موديل: ${data.model} — مستلم: ${empName}
+        <div class="mt-2">
+          <button class="btn btn-sm btn-danger" onclick="deleteVehicle('${d.id}')">حذف</button>
+        </div>
+      </div>
+    `;
+  }
+}
+
+/* ---------------------------------------------------
+   حذف مركبة
+--------------------------------------------------- */
+async function deleteVehicle(id) {
+  await deleteDoc(doc(db, "Vehicles", id));
+  loadVehicles();
+}
+
+/* ---------------------------------------------------
+   إضافة أثاث
+--------------------------------------------------- */
+async function addFurniture() {
+  const name = document.getElementById("furnitureName").value;
+  const code = document.getElementById("furnitureCode").value;
+  const empId = document.getElementById("furnitureEmployeeSelect").value;
+
+  if (!name.trim() || !code.trim() || !empId)
+    return alert("أدخل البيانات كاملة");
+
+  await addDoc(collection(db, "Furniture"), {
+    name,
+    code,
+    employee: doc(db, "Employees", empId)
+  });
+
+  document.getElementById("furnitureName").value = "";
+  document.getElementById("furnitureCode").value = "";
+  loadFurniture();
+}
+
+/* ---------------------------------------------------
+   عرض الأثاث
+--------------------------------------------------- */
+async function loadFurniture() {
+  const list = document.getElementById("furnitureList");
+  if (!list) return;
+  list.innerHTML = "";
+
+  const snap = await getDocs(collection(db, "Furniture"));
+
+  for (const d of snap.docs) {
+    const data = d.data();
+
+    let empName = "—";
+    if (data.employee) {
+      const eSnap = await getDoc(data.employee);
+      empName = eSnap.exists() ? eSnap.data().name : "—";
+    }
+
+    list.innerHTML += `
+      <div class="card p-2 mb-2">
+        <b>${data.name}</b> — كود: ${data.code} — مستلم: ${empName}
+        <div class="mt-2">
+          <button class="btn btn-sm btn-danger" onclick="deleteFurniture('${d.id}')">حذف</button>
+        </div>
+      </div>
+    `;
+  }
+}
+
+/* ---------------------------------------------------
+   حذف أثاث
+--------------------------------------------------- */
+async function deleteFurniture(id) {
+  await deleteDoc(doc(db, "Furniture", id));
+  loadFurniture();
+}
+
+/* ---------------------------------------------------
+   تحميل كل البيانات عند تشغيل الصفحة
+--------------------------------------------------- */
 function reloadAll() {
+  // الهيكلية
   loadInstitutions();
   loadDepartments();
   loadSections();
+
+  // الموظفين
   loadEmployees();
 
+  // تحميل القوائم المنسدلة
   loadSelect("Institution", "deptOrgSelect");
   loadSelect("Department", "divDeptSelect");
   loadSelect("Section", "empHierarchySelect");
 
+  // تحميل الموظفين للمديرين
   loadEmployeesSelect("orgManagerSelect");
   loadEmployeesSelect("deptManagerSelect");
   loadEmployeesSelect("divManagerSelect");
 
+  // تحميل الموظفين للأصول
   loadEmployeesSelect("deviceEmployeeSelect");
   loadEmployeesSelect("vehicleEmployeeSelect");
   loadEmployeesSelect("furnitureEmployeeSelect");
 
+  // تحميل الأصول
   loadDevices();
   loadVehicles();
   loadFurniture();
+
+  // تحميل الترويسة
+  filterLoadInstitutions();
 }
 
 window.onload = reloadAll;
 
-/* ------------------ ربط الدوال بالـ window ------------------ */
-
+/* ---------------------------------------------------
+   ربط الدوال بالـ window
+--------------------------------------------------- */
 window.addHierarchy = addHierarchy;
 window.deleteHierarchy = deleteHierarchy;
 
@@ -453,4 +614,8 @@ window.deleteFurniture = deleteFurniture;
 
 window.openEdit = openEdit;
 window.saveEdit = saveEdit;
-window.reloadAll = reloadAll;
+
+window.filterLoadInstitutions = filterLoadInstitutions;
+window.filterLoadDepartments = filterLoadDepartments;
+window.filterLoadSections = filterLoadSections;
+window.filterLoadEmployees = filterLoadEmployees;
