@@ -590,11 +590,3 @@ async function reloadAll() {
   loadFurniture();
 
   loadDepartmentsSelect("divDeptSelect");
-  loadDepartmentsSelect("empDeptSelect");
-}
-
-/* ---------------------------------------------------
-   ربط الدوال بالـ window
---------------------------------------------------- */
-window.addDepartment = addDepartment;
-window.addSection = addSection;
