@@ -13,7 +13,7 @@ export async function addOrganization() {
 
   if (!name.trim()) return alert("أدخل اسم المؤسسة");
 
-  await addDoc(collection(db, "organizations"), {
+  await addDoc(collection(db, "Institutions"), {
     name: name
   });
 
@@ -26,7 +26,7 @@ export async function loadOrganizations() {
   const list = document.getElementById("orgList");
   list.innerHTML = "";
 
-  const querySnapshot = await getDocs(collection(db, "organizations"));
+  const querySnapshot = await getDocs(collection(db, "Institutions"));
 
   querySnapshot.forEach((docSnap) => {
     const data = docSnap.data();
@@ -46,7 +46,7 @@ export async function loadOrganizations() {
 
 // حذف مؤسسة
 export async function deleteOrganization(id) {
-  await deleteDoc(doc(db, "organizations", id));
+  await deleteDoc(doc(db, "Institutions", id));
   loadOrganizations();
 }
 
