@@ -4,13 +4,22 @@
   <meta charset="UTF-8">
   <title>نظام إدارة المؤسسات</title>
 
-  <!-- Bootstrap -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 
   <style>
     body { direction: rtl; }
     .page { display: none; }
     .active-page { display: block; }
+
+    /* Sticky Header */
+    #filterHeader {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: white;
+      padding: 10px;
+      border-bottom: 2px solid #ddd;
+    }
   </style>
 </head>
 
@@ -31,8 +40,8 @@
     </div>
   </nav>
 
-  <!-- Header Filters -->
-  <div class="card p-3 mb-4">
+  <!-- Sticky Header Filters -->
+  <div id="filterHeader" class="card p-3 mb-4">
     <h5 class="mb-3">التصفية حسب الهيكلية</h5>
 
     <div class="row g-2">
@@ -54,7 +63,7 @@
 
       <div class="col-md-3">
         <label>الموظف</label>
-        <select id="filterEmployee" class="form-select"></select>
+        <select id="filterEmployee" class="form-select" onchange="reloadAll()"></select>
       </div>
 
     </div>
@@ -141,7 +150,11 @@
       <div class="card-body">
         <input id="deviceName" class="form-control mb-2" placeholder="اسم الجهاز">
         <input id="deviceSerial" class="form-control mb-2" placeholder="الرقم التسلسلي">
-        <select id="deviceEmployeeSelect" class="form-select mb-2"></select>
+
+        <div class="alert alert-info p-2">
+          سيتم ربط الجهاز بالموظف المختار في الترويسة
+        </div>
+
         <button class="btn btn-primary" onclick="addDevice()">إضافة</button>
       </div>
     </div>
@@ -161,7 +174,11 @@
       <div class="card-body">
         <input id="vehiclePlate" class="form-control mb-2" placeholder="رقم اللوحة">
         <input id="vehicleModel" class="form-control mb-2" placeholder="الموديل">
-        <select id="vehicleEmployeeSelect" class="form-select mb-2"></select>
+
+        <div class="alert alert-info p-2">
+          سيتم ربط المركبة بالموظف المختار في الترويسة
+        </div>
+
         <button class="btn btn-primary" onclick="addVehicle()">إضافة</button>
       </div>
     </div>
@@ -181,7 +198,11 @@
       <div class="card-body">
         <input id="furnitureName" class="form-control mb-2" placeholder="اسم الأثاث">
         <input id="furnitureCode" class="form-control mb-2" placeholder="الرمز / الكود">
-        <select id="furnitureEmployeeSelect" class="form-select mb-2"></select>
+
+        <div class="alert alert-info p-2">
+          سيتم ربط الأثاث بالموظف المختار في الترويسة
+        </div>
+
         <button class="btn btn-primary" onclick="addFurniture()">إضافة</button>
       </div>
     </div>
@@ -218,7 +239,6 @@
     </div>
   </div>
 
-  <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
   <script type="module" src="firebase.js"></script>
