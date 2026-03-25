@@ -31,6 +31,35 @@
     </div>
   </nav>
 
+  <!-- Header Filters -->
+  <div class="card p-3 mb-4">
+    <h5 class="mb-3">التصفية حسب الهيكلية</h5>
+
+    <div class="row g-2">
+
+      <div class="col-md-3">
+        <label>المؤسسة</label>
+        <select id="filterInstitution" class="form-select" onchange="filterLoadDepartments()"></select>
+      </div>
+
+      <div class="col-md-3">
+        <label>القسم</label>
+        <select id="filterDepartment" class="form-select" onchange="filterLoadSections()"></select>
+      </div>
+
+      <div class="col-md-3">
+        <label>الشعبة</label>
+        <select id="filterSection" class="form-select" onchange="filterLoadEmployees()"></select>
+      </div>
+
+      <div class="col-md-3">
+        <label>الموظف</label>
+        <select id="filterEmployee" class="form-select"></select>
+      </div>
+
+    </div>
+  </div>
+
   <!-- صفحة الهيكلية -->
   <div id="hierarchyPage" class="page active-page">
 
@@ -88,7 +117,6 @@
 
     <h2 class="mb-3">إدارة الموظفين</h2>
 
-    <!-- إضافة موظف -->
     <div class="card mb-4">
       <div class="card-header">إضافة موظف</div>
       <div class="card-body">
@@ -163,7 +191,7 @@
 
   </div>
 
-  <!-- مودال التعديل (للهيكلية والموظفين فقط) -->
+  <!-- Modal -->
   <div class="modal fade" id="editModal" tabindex="-1">
     <div class="modal-dialog">
       <div class="modal-content">
