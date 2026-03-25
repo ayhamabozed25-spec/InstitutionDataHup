@@ -11,7 +11,7 @@ import {
 /* ------------------ تحميل القوائم المنسدلة ------------------ */
 
 async function loadOrgSelect() {
-  const snap = await getDocs(collection(db, "organizations"));
+  const snap = await getDocs(collection(db, "Institutions"));
   const select = document.getElementById("deptOrgSelect");
   select.innerHTML = "<option value=''>اختر مؤسسة</option>";
 
@@ -21,7 +21,7 @@ async function loadOrgSelect() {
 }
 
 async function loadDeptSelect() {
-  const snap = await getDocs(collection(db, "departments"));
+  const snap = await getDocs(collection(db, "Departments"));
   const select = document.getElementById("divDeptSelect");
   select.innerHTML = "<option value=''>اختر قسم</option>";
 
@@ -31,7 +31,7 @@ async function loadDeptSelect() {
 }
 
 async function loadDivSelect() {
-  const snap = await getDocs(collection(db, "divisions"));
+  const snap = await getDocs(collection(db, "Sections"));
   const select = document.getElementById("empDivSelect");
   select.innerHTML = "<option value=''>اختر شعبة</option>";
 
@@ -46,7 +46,7 @@ export async function addOrganization() {
   const name = document.getElementById("orgName").value;
   if (!name.trim()) return alert("أدخل اسم المؤسسة");
 
-  await addDoc(collection(db, "organizations"), { name });
+  await addDoc(collection(db, "Institutions"), { name });
   document.getElementById("orgName").value = "";
   loadOrganizations();
 }
@@ -57,14 +57,14 @@ export async function loadOrganizations() {
   const list = document.getElementById("orgList");
   list.innerHTML = "";
 
-  const snap = await getDocs(collection(db, "organizations"));
+  const snap = await getDocs(collection(db, "Institutions"));
   snap.forEach(d => {
     const data = d.data();
     list.innerHTML += `
       <div class="card p-2 mb-2">
         <b>${data.name}</b>
         <div>
-          <button class="btn btn-sm btn-warning" onclick="openEdit('${d.id}','organizations','${data.name}')">تعديل</button>
+          <button class="btn btn-sm btn-warning" onclick="openEdit('${d.id}','Institutions','${data.name}')">تعديل</button>
           <button class="btn btn-sm btn-danger" onclick="deleteOrganization('${d.id}')">حذف</button>
         </div>
       </div>
@@ -73,7 +73,7 @@ export async function loadOrganizations() {
 }
 
 export async function deleteOrganization(id) {
-  await deleteDoc(doc(db, "organizations", id));
+  await deleteDoc(doc(db, "Institutions", id));
   loadOrganizations();
 }
 
@@ -85,7 +85,7 @@ export async function addDepartment() {
 
   if (!name.trim() || !orgId) return alert("أدخل البيانات كاملة");
 
-  await addDoc(collection(db, "departments"), {
+  await addDoc(collection(db, "Departments"), {
     name,
     organizationId: orgId
   });
@@ -100,14 +100,14 @@ export async function loadDepartments() {
   const list = document.getElementById("deptList");
   list.innerHTML = "";
 
-  const snap = await getDocs(collection(db, "departments"));
+  const snap = await getDocs(collection(db, "Departments"));
   snap.forEach(d => {
     const data = d.data();
     list.innerHTML += `
       <div class="card p-2 mb-2">
         <b>${data.name}</b> — مؤسسة: ${data.organizationId}
         <div>
-          <button class="btn btn-sm btn-warning" onclick="openEdit('${d.id}','departments','${data.name}','${data.organizationId}')">تعديل</button>
+          <button class="btn btn-sm btn-warning" onclick="openEdit('${d.id}','Departments','${data.name}','${data.organizationId}')">تعديل</button>
           <button class="btn btn-sm btn-danger" onclick="deleteDepartment('${d.id}')">حذف</button>
         </div>
       </div>
@@ -116,7 +116,7 @@ export async function loadDepartments() {
 }
 
 export async function deleteDepartment(id) {
-  await deleteDoc(doc(db, "departments", id));
+  await deleteDoc(doc(db, "Departments", id));
   loadDepartments();
 }
 
@@ -128,7 +128,7 @@ export async function addDivision() {
 
   if (!name.trim() || !deptId) return alert("أدخل البيانات كاملة");
 
-  await addDoc(collection(db, "divisions"), {
+  await addDoc(collection(db, "Sections"), {
     name,
     departmentId: deptId
   });
@@ -143,14 +143,14 @@ export async function loadDivisions() {
   const list = document.getElementById("divList");
   list.innerHTML = "";
 
-  const snap = await getDocs(collection(db, "divisions"));
+  const snap = await getDocs(collection(db, "Sections"));
   snap.forEach(d => {
     const data = d.data();
     list.innerHTML += `
       <div class="card p-2 mb-2">
         <b>${data.name}</b> — قسم: ${data.departmentId}
         <div>
-          <button class="btn btn-sm btn-warning" onclick="openEdit('${d.id}','divisions','${data.name}','${data.departmentId}')">تعديل</button>
+          <button class="btn btn-sm btn-warning" onclick="openEdit('${d.id}','Sections','${data.name}','${data.departmentId}')">تعديل</button>
           <button class="btn btn-sm btn-danger" onclick="deleteDivision('${d.id}')">حذف</button>
         </div>
       </div>
@@ -159,7 +159,7 @@ export async function loadDivisions() {
 }
 
 export async function deleteDivision(id) {
-  await deleteDoc(doc(db, "divisions", id));
+  await deleteDoc(doc(db, "Sections", id));
   loadDivisions();
 }
 
@@ -171,7 +171,7 @@ export async function addEmployee() {
 
   if (!name.trim() || !divId) return alert("أدخل البيانات كاملة");
 
-  await addDoc(collection(db, "employees"), {
+  await addDoc(collection(db, "Employees"), {
     name,
     divisionId: divId
   });
@@ -186,14 +186,14 @@ export async function loadEmployees() {
   const list = document.getElementById("empList");
   list.innerHTML = "";
 
-  const snap = await getDocs(collection(db, "employees"));
+  const snap = await getDocs(collection(db, "Employees"));
   snap.forEach(d => {
     const data = d.data();
     list.innerHTML += `
       <div class="card p-2 mb-2">
         <b>${data.name}</b> — شعبة: ${data.divisionId}
         <div>
-          <button class="btn btn-sm btn-warning" onclick="openEdit('${d.id}','employees','${data.name}','${data.divisionId}')">تعديل</button>
+          <button class="btn btn-sm btn-warning" onclick="openEdit('${d.id}','Employees','${data.name}','${data.divisionId}')">تعديل</button>
           <button class="btn btn-sm btn-danger" onclick="deleteEmployee('${d.id}')">حذف</button>
         </div>
       </div>
@@ -202,7 +202,7 @@ export async function loadEmployees() {
 }
 
 export async function deleteEmployee(id) {
-  await deleteDoc(doc(db, "employees", id));
+  await deleteDoc(doc(db, "Employees", id));
   loadEmployees();
 }
 
@@ -247,22 +247,22 @@ window.saveEdit = async function () {
 
   const ref = doc(db, type, id);
 
-  if (type === "organizations") {
+  if (type === "Institutions") {
     await updateDoc(ref, { name });
     loadOrganizations();
   }
 
-  if (type === "departments") {
+  if (type === "Departments") {
     await updateDoc(ref, { name, organizationId: relation });
     loadDepartments();
   }
 
-  if (type === "divisions") {
+  if (type === "Sections") {
     await updateDoc(ref, { name, departmentId: relation });
     loadDivisions();
   }
 
-  if (type === "employees") {
+  if (type === "Employees") {
     await updateDoc(ref, { name, divisionId: relation });
     loadEmployees();
   }
