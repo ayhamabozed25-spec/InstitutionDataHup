@@ -5,7 +5,8 @@ import {
   getDocs,
   deleteDoc,
   doc,
-  getDoc
+  getDoc,
+  updateDoc
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 /* ---------------------------------------------------
@@ -57,6 +58,8 @@ async function filterLoadDepartments() {
   const select = document.getElementById("filterDepartment");
   if (!select) return;
 
+  const current = select.value;
+
   select.innerHTML = "<option value=''>اختر قسم</option>";
 
   const snap = await getDocs(collection(db, "Hierarchy"));
@@ -68,6 +71,8 @@ async function filterLoadDepartments() {
     }
   });
 
+  if (current) select.value = current;
+
   filterLoadSections();
 }
 
@@ -78,6 +83,8 @@ async function filterLoadSections() {
   const deptId = document.getElementById("filterDepartment")?.value;
   const select = document.getElementById("filterSection");
   if (!select) return;
+
+  const current = select.value;
 
   select.innerHTML = "<option value=''>اختر شعبة</option>";
 
@@ -95,6 +102,8 @@ async function filterLoadSections() {
     }
   });
 
+  if (current) select.value = current;
+
   filterLoadEmployees();
 }
 
@@ -107,6 +116,8 @@ async function filterLoadEmployees() {
 
   const select = document.getElementById("filterEmployee");
   if (!select) return;
+
+  const current = select.value;
 
   select.innerHTML = "<option value=''>اختر موظف</option>";
 
@@ -132,6 +143,8 @@ async function filterLoadEmployees() {
       }
     }
   }
+
+  if (current) select.value = current;
 }
 
 /* ---------------------------------------------------
@@ -140,6 +153,8 @@ async function filterLoadEmployees() {
 async function loadDepartmentsSelect(selectId) {
   const select = document.getElementById(selectId);
   if (!select) return;
+
+  const current = select.value;
 
   select.innerHTML = "<option value=''>اختر قسم</option>";
 
@@ -151,6 +166,8 @@ async function loadDepartmentsSelect(selectId) {
       select.innerHTML += `<option value="${d.id}">${data.name}</option>`;
     }
   });
+
+  if (current) select.value = current;
 }
 
 /* ---------------------------------------------------
@@ -159,6 +176,8 @@ async function loadDepartmentsSelect(selectId) {
 async function loadSectionsSelect(selectId, deptId) {
   const select = document.getElementById(selectId);
   if (!select) return;
+
+  const current = select.value;
 
   select.innerHTML = "<option value=''>بدون شعبة</option>";
 
@@ -172,6 +191,8 @@ async function loadSectionsSelect(selectId, deptId) {
       select.innerHTML += `<option value="${d.id}">${data.name}</option>`;
     }
   });
+
+  if (current) select.value = current;
 }
 
 /* ---------------------------------------------------
@@ -181,6 +202,8 @@ async function loadEmployeesSelect(selectId) {
   const select = document.getElementById(selectId);
   if (!select) return;
 
+  const current = select.value;
+
   select.innerHTML = "<option value=''>بدون مدير</option>";
 
   const snap = await getDocs(collection(db, "Employees"));
@@ -188,6 +211,8 @@ async function loadEmployeesSelect(selectId) {
   snap.forEach(d => {
     select.innerHTML += `<option value="${d.id}">${d.data().name}</option>`;
   });
+
+  if (current) select.value = current;
 }
 
 /* ---------------------------------------------------
@@ -264,7 +289,12 @@ async function loadHierarchyTree() {
     if (data.type === "Section") sections.push({ id: d.id, ...data });
   });
 
+  const filterDept = document.getElementById("filterDepartment")?.value || "";
+  const filterSec  = document.getElementById("filterSection")?.value || "";
+
   for (const dept of departments) {
+    if (filterDept && dept.id !== filterDept) continue;
+
     let deptEmployees = 0;
     let managerName = "—";
 
@@ -280,16 +310,27 @@ async function loadHierarchyTree() {
 
     container.innerHTML += `
       <div class="card p-3 mb-3">
-        <h5>${dept.name}</h5>
-        <div class="text-muted">رئيس القسم: ${managerName}</div>
-        <div class="text-muted">عدد الموظفين: ${deptEmployees}</div>
-        <div id="dept-${dept.id}-sections"></div>
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <h5 class="mb-1">${dept.name}</h5>
+            <div class="text-muted">رئيس القسم: ${managerName}</div>
+            <div class="text-muted">عدد الموظفين: ${deptEmployees}</div>
+          </div>
+          <div>
+            <button class="btn btn-sm btn-warning me-1" onclick="openEditDepartment('${dept.id}')">✏️ تعديل</button>
+            <button class="btn btn-sm btn-danger" onclick="deleteDepartment('${dept.id}')">🗑️ حذف</button>
+          </div>
+        </div>
+        <div id="dept-${dept.id}-sections" class="mt-2"></div>
       </div>
     `;
   }
 
   for (const sec of sections) {
     const parentId = sec.parent?.id;
+    if (filterDept && parentId !== filterDept) continue;
+    if (filterSec && sec.id !== filterSec) continue;
+
     const secContainer = document.getElementById(`dept-${parentId}-sections`);
     if (!secContainer) continue;
 
@@ -307,10 +348,18 @@ async function loadHierarchyTree() {
     });
 
     secContainer.innerHTML += `
-      <div class="section-item">
-        <b>- ${sec.name}</b>
-        <div class="text-muted">رئيس الشعبة: ${secManager}</div>
-        <div class="text-muted">الموظفون: ${secEmployees.length ? secEmployees.join("، ") : "—"}</div>
+      <div class="section-item card p-2 mb-2">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <b>- ${sec.name}</b>
+            <div class="text-muted">رئيس الشعبة: ${secManager}</div>
+            <div class="text-muted">الموظفون: ${secEmployees.length ? secEmployees.join("، ") : "—"}</div>
+          </div>
+          <div>
+            <button class="btn btn-sm btn-warning me-1" onclick="openEditSection('${sec.id}')">✏️ تعديل</button>
+            <button class="btn btn-sm btn-danger" onclick="deleteSection('${sec.id}')">🗑️ حذف</button>
+          </div>
+        </div>
       </div>
     `;
   }
@@ -321,7 +370,7 @@ async function loadHierarchyTree() {
 --------------------------------------------------- */
 async function loadSectionsForEmployee() {
   const deptId = document.getElementById("empDeptSelect")?.value;
-  loadSectionsSelect("empSectionSelect", deptId);
+  await loadSectionsSelect("empSectionSelect", deptId);
 }
 
 /* ---------------------------------------------------
@@ -351,6 +400,7 @@ async function addEmployee() {
   });
 
   nameInput.value = "";
+  // لا نلمس اختيار القسم والشعبة
   loadEmployees();
   loadHierarchyTree();
 }
@@ -378,9 +428,14 @@ async function loadEmployees() {
 
     list.innerHTML += `
       <div class="card p-2 mb-2">
-        <b>${data.name}</b> — تابع لـ: ${hierarchyName}
-        <div class="mt-2">
-          <button class="btn btn-sm btn-danger" onclick="deleteEmployee('${d.id}')">حذف</button>
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <b>${data.name}</b> — تابع لـ: ${hierarchyName}
+          </div>
+          <div>
+            <button class="btn btn-sm btn-warning me-1" onclick="openEditEmployee('${d.id}')">✏️ تعديل</button>
+            <button class="btn btn-sm btn-danger" onclick="deleteEmployee('${d.id}')">🗑️ حذف</button>
+          </div>
         </div>
       </div>
     `;
@@ -462,9 +517,14 @@ async function loadDevices() {
 
     list.innerHTML += `
       <div class="card p-2 mb-2">
-        <b>${data.name}</b> — سيريال: ${data.serial} — مستلم: ${empName}
-        <div class="mt-2">
-          <button class="btn btn-sm btn-danger" onclick="deleteDevice('${d.id}')">حذف</button>
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <b>${data.name}</b> — سيريال: ${data.serial} — مستلم: ${empName}
+          </div>
+          <div>
+            <button class="btn btn-sm btn-warning me-1" onclick="openEditDevice('${d.id}')">✏️ تعديل</button>
+            <button class="btn btn-sm btn-danger" onclick="deleteDevice('${d.id}')">🗑️ حذف</button>
+          </div>
         </div>
       </div>
     `;
@@ -545,9 +605,14 @@ async function loadVehicles() {
 
     list.innerHTML += `
       <div class="card p-2 mb-2">
-        <b>${data.plate}</b> — موديل: ${data.model} — مستلم: ${empName}
-        <div class="mt-2">
-          <button class="btn btn-sm btn-danger" onclick="deleteVehicle('${d.id}')">حذف</button>
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <b>${data.plate}</b> — موديل: ${data.model} — مستلم: ${empName}
+          </div>
+          <div>
+            <button class="btn btn-sm btn-warning me-1" onclick="openEditVehicle('${d.id}')">✏️ تعديل</button>
+            <button class="btn btn-sm btn-danger" onclick="deleteVehicle('${d.id}')">🗑️ حذف</button>
+          </div>
         </div>
       </div>
     `;
@@ -628,20 +693,292 @@ async function loadFurniture() {
 
     list.innerHTML += `
       <div class="card p-2 mb-2">
-        <b>${data.name}</b> — كود: ${data.code} — مستلم: ${empName}
-        <div class="mt-2">
-          <button class="btn btn-sm btn-danger" onclick="deleteFurniture('${d.id}')">حذف</button>
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <b>${data.name}</b> — كود: ${data.code} — مستلم: ${empName}
+          </div>
+          <div>
+            <button class="btn btn-sm btn-warning me-1" onclick="openEditFurniture('${d.id}')">✏️ تعديل</button>
+            <button class="btn btn-sm btn-danger" onclick="deleteFurniture('${d.id}')">🗑️ حذف</button>
+          </div>
         </div>
       </div>
     `;
   }
-}  
+}
 
 /* ---------------------------------------------------
    حذف أثاث
 --------------------------------------------------- */
 async function deleteFurniture(id) {
   await deleteDoc(doc(db, "Furniture", id));
+  loadFurniture();
+}
+
+/* ---------------------------------------------------
+   تعديل الأقسام / الشعب / الموظفين / الأصول
+--------------------------------------------------- */
+
+// الأقسام
+async function openEditDepartment(id) {
+  const ref = doc(db, "Hierarchy", id);
+  const snap = await getDoc(ref);
+  if (!snap.exists()) return;
+
+  const data = snap.data();
+
+  document.getElementById("editDeptId").value = id;
+  document.getElementById("editDeptName").value = data.name || "";
+
+  await loadEmployeesSelect("editDeptManager");
+  document.getElementById("editDeptManager").value = data.manager ? data.manager.id : "";
+
+  const modal = new bootstrap.Modal(document.getElementById("editDepartmentModal"));
+  modal.show();
+}
+
+async function saveDepartmentEdit() {
+  const id = document.getElementById("editDeptId").value;
+  const name = document.getElementById("editDeptName").value;
+  const managerId = document.getElementById("editDeptManager").value;
+
+  if (!name.trim()) return alert("أدخل اسم القسم");
+
+  const payload = {
+    name,
+    manager: managerId ? doc(db, "Employees", managerId) : null
+  };
+
+  await updateDoc(doc(db, "Hierarchy", id), payload);
+
+  bootstrap.Modal.getInstance(document.getElementById("editDepartmentModal")).hide();
+  loadHierarchyTree();
+}
+
+// الشعب
+async function openEditSection(id) {
+  const ref = doc(db, "Hierarchy", id);
+  const snap = await getDoc(ref);
+  if (!snap.exists()) return;
+
+  const data = snap.data();
+
+  document.getElementById("editSectionId").value = id;
+  document.getElementById("editSectionName").value = data.name || "";
+
+  await loadDepartmentsSelect("editSectionDept");
+  document.getElementById("editSectionDept").value = data.parent ? data.parent.id : "";
+
+  await loadEmployeesSelect("editSectionManager");
+  document.getElementById("editSectionManager").value = data.manager ? data.manager.id : "";
+
+  const modal = new bootstrap.Modal(document.getElementById("editSectionModal"));
+  modal.show();
+}
+
+async function saveSectionEdit() {
+  const id = document.getElementById("editSectionId").value;
+  const name = document.getElementById("editSectionName").value;
+  const deptId = document.getElementById("editSectionDept").value;
+  const managerId = document.getElementById("editSectionManager").value;
+
+  if (!name.trim() || !deptId) return alert("أدخل البيانات كاملة");
+
+  const payload = {
+    name,
+    parent: doc(db, "Hierarchy", deptId),
+    manager: managerId ? doc(db, "Employees", managerId) : null
+  };
+
+  await updateDoc(doc(db, "Hierarchy", id), payload);
+
+  bootstrap.Modal.getInstance(document.getElementById("editSectionModal")).hide();
+  loadHierarchyTree();
+}
+
+// حذف قسم / شعبة
+async function deleteDepartment(id) {
+  await deleteDoc(doc(db, "Hierarchy", id));
+  loadHierarchyTree();
+}
+
+async function deleteSection(id) {
+  await deleteDoc(doc(db, "Hierarchy", id));
+  loadHierarchyTree();
+}
+
+// الموظفين
+async function openEditEmployee(id) {
+  const ref = doc(db, "Employees", id);
+  const snap = await getDoc(ref);
+  if (!snap.exists()) return;
+
+  const data = snap.data();
+
+  document.getElementById("editEmpId").value = id;
+  document.getElementById("editEmpName").value = data.name || "";
+
+  await loadDepartmentsSelect("editEmpDept");
+
+  let deptId = "";
+  let secId = "";
+
+  if (data.hierarchy) {
+    const hSnap = await getDoc(data.hierarchy);
+    if (hSnap.exists()) {
+      const hData = hSnap.data();
+      if (hData.type === "Department") {
+        deptId = data.hierarchy.id;
+      } else if (hData.type === "Section") {
+        secId = data.hierarchy.id;
+        deptId = hData.parent?.id || "";
+      }
+    }
+  }
+
+  document.getElementById("editEmpDept").value = deptId;
+  await loadSectionsSelect("editEmpSection", deptId);
+  document.getElementById("editEmpSection").value = secId;
+
+  const modal = new bootstrap.Modal(document.getElementById("editEmployeeModal"));
+  modal.show();
+}
+
+async function loadEditEmpSections() {
+  const deptId = document.getElementById("editEmpDept").value;
+  await loadSectionsSelect("editEmpSection", deptId);
+}
+
+async function saveEmployeeEdit() {
+  const id = document.getElementById("editEmpId").value;
+  const name = document.getElementById("editEmpName").value;
+  const deptId = document.getElementById("editEmpDept").value;
+  const secId  = document.getElementById("editEmpSection").value;
+
+  if (!name.trim()) return alert("أدخل اسم الموظف");
+
+  let hierarchyRef = null;
+  if (secId) hierarchyRef = doc(db, "Hierarchy", secId);
+  else if (deptId) hierarchyRef = doc(db, "Hierarchy", deptId);
+
+  await updateDoc(doc(db, "Employees", id), {
+    name,
+    hierarchy: hierarchyRef
+  });
+
+  bootstrap.Modal.getInstance(document.getElementById("editEmployeeModal")).hide();
+  loadEmployees();
+  loadHierarchyTree();
+}
+
+// الأجهزة
+async function openEditDevice(id) {
+  const ref = doc(db, "Devices", id);
+  const snap = await getDoc(ref);
+  if (!snap.exists()) return;
+
+  const data = snap.data();
+
+  document.getElementById("editDeviceId").value = id;
+  document.getElementById("editDeviceName").value = data.name || "";
+  document.getElementById("editDeviceSerial").value = data.serial || "";
+
+  await loadEmployeesSelect("editDeviceEmployee");
+  document.getElementById("editDeviceEmployee").value = data.employee ? data.employee.id : "";
+
+  const modal = new bootstrap.Modal(document.getElementById("editDeviceModal"));
+  modal.show();
+}
+
+async function saveDeviceEdit() {
+  const id = document.getElementById("editDeviceId").value;
+  const name = document.getElementById("editDeviceName").value;
+  const serial = document.getElementById("editDeviceSerial").value;
+  const empId = document.getElementById("editDeviceEmployee").value;
+
+  if (!name.trim() || !serial.trim()) return alert("أدخل البيانات كاملة");
+
+  await updateDoc(doc(db, "Devices", id), {
+    name,
+    serial,
+    employee: empId ? doc(db, "Employees", empId) : null
+  });
+
+  bootstrap.Modal.getInstance(document.getElementById("editDeviceModal")).hide();
+  loadDevices();
+}
+
+// المركبات
+async function openEditVehicle(id) {
+  const ref = doc(db, "Vehicles", id);
+  const snap = await getDoc(ref);
+  if (!snap.exists()) return;
+
+  const data = snap.data();
+
+  document.getElementById("editVehicleId").value = id;
+  document.getElementById("editVehiclePlate").value = data.plate || "";
+  document.getElementById("editVehicleModel").value = data.model || "";
+
+  await loadEmployeesSelect("editVehicleEmployee");
+  document.getElementById("editVehicleEmployee").value = data.employee ? data.employee.id : "";
+
+  const modal = new bootstrap.Modal(document.getElementById("editVehicleModal"));
+  modal.show();
+}
+
+async function saveVehicleEdit() {
+  const id = document.getElementById("editVehicleId").value;
+  const plate = document.getElementById("editVehiclePlate").value;
+  const model = document.getElementById("editVehicleModel").value;
+  const empId = document.getElementById("editVehicleEmployee").value;
+
+  if (!plate.trim() || !model.trim()) return alert("أدخل البيانات كاملة");
+
+  await updateDoc(doc(db, "Vehicles", id), {
+    plate,
+    model,
+    employee: empId ? doc(db, "Employees", empId) : null
+  });
+
+  bootstrap.Modal.getInstance(document.getElementById("editVehicleModal")).hide();
+  loadVehicles();
+}
+
+// الأثاث
+async function openEditFurniture(id) {
+  const ref = doc(db, "Furniture", id);
+  const snap = await getDoc(ref);
+  if (!snap.exists()) return;
+
+  const data = snap.data();
+
+  document.getElementById("editFurnitureId").value = id;
+  document.getElementById("editFurnitureName").value = data.name || "";
+  document.getElementById("editFurnitureCode").value = data.code || "";
+
+  await loadEmployeesSelect("editFurnitureEmployee");
+  document.getElementById("editFurnitureEmployee").value = data.employee ? data.employee.id : "";
+
+  const modal = new bootstrap.Modal(document.getElementById("editFurnitureModal"));
+  modal.show();
+}
+
+async function saveFurnitureEdit() {
+  const id = document.getElementById("editFurnitureId").value;
+  const name = document.getElementById("editFurnitureName").value;
+  const code = document.getElementById("editFurnitureCode").value;
+  const empId = document.getElementById("editFurnitureEmployee").value;
+
+  if (!name.trim() || !code.trim()) return alert("أدخل البيانات كاملة");
+
+  await updateDoc(doc(db, "Furniture", id), {
+    name,
+    code,
+    employee: empId ? doc(db, "Employees", empId) : null
+  });
+
+  bootstrap.Modal.getInstance(document.getElementById("editFurnitureModal")).hide();
   loadFurniture();
 }
 
@@ -690,6 +1027,27 @@ window.loadEmployees = loadEmployees;
 window.loadDevices = loadDevices;
 window.loadVehicles = loadVehicles;
 window.loadFurniture = loadFurniture;
+
+// edit bindings
+window.openEditDepartment = openEditDepartment;
+window.saveDepartmentEdit = saveDepartmentEdit;
+window.openEditSection = openEditSection;
+window.saveSectionEdit = saveSectionEdit;
+window.deleteDepartment = deleteDepartment;
+window.deleteSection = deleteSection;
+
+window.openEditEmployee = openEditEmployee;
+window.saveEmployeeEdit = saveEmployeeEdit;
+window.loadEditEmpSections = loadEditEmpSections;
+
+window.openEditDevice = openEditDevice;
+window.saveDeviceEdit = saveDeviceEdit;
+
+window.openEditVehicle = openEditVehicle;
+window.saveVehicleEdit = saveVehicleEdit;
+
+window.openEditFurniture = openEditFurniture;
+window.saveFurnitureEdit = saveFurnitureEdit;
 
 /* ---------------------------------------------------
    تشغيل أولي عند تحميل الصفحة
