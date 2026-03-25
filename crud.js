@@ -4,7 +4,6 @@ import {
   addDoc,
   getDocs,
   deleteDoc,
-  updateDoc,
   doc,
   getDoc
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
@@ -18,7 +17,6 @@ async function getHierarchyChain(ref) {
   if (!ref) return chain;
 
   const secSnap = await getDoc(ref);
-
   if (!secSnap.exists()) return chain;
 
   const data = secSnap.data();
@@ -39,9 +37,9 @@ async function getHierarchyChain(ref) {
    الفلترة الصارمة
 --------------------------------------------------- */
 function passesFilter(chain) {
-  const dept = document.getElementById("filterDepartment").value;
-  const sec  = document.getElementById("filterSection").value;
-  const emp  = document.getElementById("filterEmployee").value;
+  const dept = document.getElementById("filterDepartment")?.value || "";
+  const sec  = document.getElementById("filterSection")?.value || "";
+  const emp  = document.getElementById("filterEmployee")?.value || "";
 
   if (!dept) return false;
 
@@ -57,6 +55,8 @@ function passesFilter(chain) {
 --------------------------------------------------- */
 async function filterLoadDepartments() {
   const select = document.getElementById("filterDepartment");
+  if (!select) return;
+
   select.innerHTML = "<option value=''>اختر قسم</option>";
 
   const snap = await getDocs(collection(db, "Hierarchy"));
@@ -72,11 +72,12 @@ async function filterLoadDepartments() {
 }
 
 /* ---------------------------------------------------
-   تحميل الشعب بناءً على القسم
+   تحميل الشعب بناءً على القسم في الترويسة
 --------------------------------------------------- */
 async function filterLoadSections() {
-  const deptId = document.getElementById("filterDepartment").value;
+  const deptId = document.getElementById("filterDepartment")?.value;
   const select = document.getElementById("filterSection");
+  if (!select) return;
 
   select.innerHTML = "<option value=''>اختر شعبة</option>";
 
@@ -98,13 +99,15 @@ async function filterLoadSections() {
 }
 
 /* ---------------------------------------------------
-   تحميل الموظفين بناءً على الشعبة
+   تحميل الموظفين بناءً على الترويسة
 --------------------------------------------------- */
 async function filterLoadEmployees() {
-  const secId = document.getElementById("filterSection").value;
-  const deptId = document.getElementById("filterDepartment").value;
+  const secId = document.getElementById("filterSection")?.value;
+  const deptId = document.getElementById("filterDepartment")?.value;
 
   const select = document.getElementById("filterEmployee");
+  if (!select) return;
+
   select.innerHTML = "<option value=''>اختر موظف</option>";
 
   if (!deptId) return;
@@ -143,8 +146,9 @@ async function loadDepartmentsSelect(selectId) {
   const snap = await getDocs(collection(db, "Hierarchy"));
 
   snap.forEach(d => {
-    if (d.data().type === "Department") {
-      select.innerHTML += `<option value="${d.id}">${d.data().name}</option>`;
+    const data = d.data();
+    if (data.type === "Department") {
+      select.innerHTML += `<option value="${d.id}">${data.name}</option>`;
     }
   });
 }
@@ -190,8 +194,13 @@ async function loadEmployeesSelect(selectId) {
    إضافة قسم
 --------------------------------------------------- */
 async function addDepartment() {
-  const name = document.getElementById("deptName").value;
-  const managerId = document.getElementById("deptManagerSelect").value;
+  const nameInput = document.getElementById("deptName");
+  const managerSelect = document.getElementById("deptManagerSelect");
+
+  if (!nameInput) return;
+
+  const name = nameInput.value;
+  const managerId = managerSelect ? managerSelect.value : "";
 
   if (!name.trim()) return alert("أدخل اسم القسم");
 
@@ -202,7 +211,7 @@ async function addDepartment() {
     manager: managerId ? doc(db, "Employees", managerId) : null
   });
 
-  document.getElementById("deptName").value = "";
+  nameInput.value = "";
   loadHierarchyTree();
 }
 
@@ -210,9 +219,15 @@ async function addDepartment() {
    إضافة شعبة
 --------------------------------------------------- */
 async function addSection() {
-  const name = document.getElementById("divName").value;
-  const deptId = document.getElementById("divDeptSelect").value;
-  const managerId = document.getElementById("divManagerSelect").value;
+  const nameInput = document.getElementById("divName");
+  const deptSelect = document.getElementById("divDeptSelect");
+  const managerSelect = document.getElementById("divManagerSelect");
+
+  if (!nameInput || !deptSelect) return;
+
+  const name = nameInput.value;
+  const deptId = deptSelect.value;
+  const managerId = managerSelect ? managerSelect.value : "";
 
   if (!name.trim() || !deptId)
     return alert("أدخل البيانات كاملة");
@@ -224,7 +239,7 @@ async function addSection() {
     manager: managerId ? doc(db, "Employees", managerId) : null
   });
 
-  document.getElementById("divName").value = "";
+  nameInput.value = "";
   loadHierarchyTree();
 }
 
@@ -233,6 +248,8 @@ async function addSection() {
 --------------------------------------------------- */
 async function loadHierarchyTree() {
   const container = document.getElementById("hierarchyTree");
+  if (!container) return;
+
   container.innerHTML = "";
 
   const snap = await getDocs(collection(db, "Hierarchy"));
@@ -303,7 +320,7 @@ async function loadHierarchyTree() {
    تحميل الشعب عند اختيار قسم للموظف
 --------------------------------------------------- */
 async function loadSectionsForEmployee() {
-  const deptId = document.getElementById("empDeptSelect").value;
+  const deptId = document.getElementById("empDeptSelect")?.value;
   loadSectionsSelect("empSectionSelect", deptId);
 }
 
@@ -311,21 +328,29 @@ async function loadSectionsForEmployee() {
    إضافة موظف (يسمح بدون قسم أو شعبة)
 --------------------------------------------------- */
 async function addEmployee() {
-  const name = document.getElementById("empName").value;
-  const deptId = document.getElementById("empDeptSelect").value;
-  const secId  = document.getElementById("empSectionSelect").value;
+  const nameInput = document.getElementById("empName");
+  const deptSelect = document.getElementById("empDeptSelect");
+  const secSelect  = document.getElementById("empSectionSelect");
+
+  if (!nameInput) return;
+
+  const name = nameInput.value;
+  const deptId = deptSelect ? deptSelect.value : "";
+  const secId  = secSelect ? secSelect.value : "";
 
   let hierarchyRef = null;
 
   if (secId) hierarchyRef = doc(db, "Hierarchy", secId);
   else if (deptId) hierarchyRef = doc(db, "Hierarchy", deptId);
 
+  if (!name.trim()) return alert("أدخل اسم الموظف");
+
   await addDoc(collection(db, "Employees"), {
     name,
     hierarchy: hierarchyRef
   });
 
-  document.getElementById("empName").value = "";
+  nameInput.value = "";
   loadEmployees();
   loadHierarchyTree();
 }
@@ -335,6 +360,8 @@ async function addEmployee() {
 --------------------------------------------------- */
 async function loadEmployees() {
   const list = document.getElementById("empList");
+  if (!list) return;
+
   list.innerHTML = "";
 
   const snap = await getDocs(collection(db, "Employees"));
@@ -373,9 +400,14 @@ async function deleteEmployee(id) {
    إضافة جهاز
 --------------------------------------------------- */
 async function addDevice() {
-  const name = document.getElementById("deviceName").value;
-  const serial = document.getElementById("deviceSerial").value;
-  const empId = document.getElementById("filterEmployee").value;
+  const nameInput   = document.getElementById("deviceName");
+  const serialInput = document.getElementById("deviceSerial");
+  const empId       = document.getElementById("filterEmployee")?.value;
+
+  if (!nameInput || !serialInput) return;
+
+  const name   = nameInput.value;
+  const serial = serialInput.value;
 
   if (!name.trim() || !serial.trim())
     return alert("أدخل البيانات كاملة");
@@ -389,8 +421,8 @@ async function addDevice() {
     employee: doc(db, "Employees", empId)
   });
 
-  document.getElementById("deviceName").value = "";
-  document.getElementById("deviceSerial").value = "";
+  nameInput.value = "";
+  serialInput.value = "";
   loadDevices();
 }
 
@@ -400,6 +432,7 @@ async function addDevice() {
 async function loadDevices() {
   const list = document.getElementById("devicesList");
   if (!list) return;
+
   list.innerHTML = "";
 
   const snap = await getDocs(collection(db, "Devices"));
@@ -450,9 +483,14 @@ async function deleteDevice(id) {
    إضافة مركبة
 --------------------------------------------------- */
 async function addVehicle() {
-  const plate = document.getElementById("vehiclePlate").value;
-  const model = document.getElementById("vehicleModel").value;
-  const empId = document.getElementById("filterEmployee").value;
+  const plateInput = document.getElementById("vehiclePlate");
+  const modelInput = document.getElementById("vehicleModel");
+  const empId      = document.getElementById("filterEmployee")?.value;
+
+  if (!plateInput || !modelInput) return;
+
+  const plate = plateInput.value;
+  const model = modelInput.value;
 
   if (!plate.trim() || !model.trim())
     return alert("أدخل البيانات كاملة");
@@ -466,8 +504,8 @@ async function addVehicle() {
     employee: doc(db, "Employees", empId)
   });
 
-  document.getElementById("vehiclePlate").value = "";
-  document.getElementById("vehicleModel").value = "";
+  plateInput.value = "";
+  modelInput.value = "";
   loadVehicles();
 }
 
@@ -477,6 +515,7 @@ async function addVehicle() {
 async function loadVehicles() {
   const list = document.getElementById("vehiclesList");
   if (!list) return;
+
   list.innerHTML = "";
 
   const snap = await getDocs(collection(db, "Vehicles"));
@@ -527,9 +566,14 @@ async function deleteVehicle(id) {
    إضافة أثاث
 --------------------------------------------------- */
 async function addFurniture() {
-  const name = document.getElementById("furnitureName").value;
-  const code = document.getElementById("furnitureCode").value;
-  const empId = document.getElementById("filterEmployee").value;
+  const nameInput = document.getElementById("furnitureName");
+  const codeInput = document.getElementById("furnitureCode");
+  const empId     = document.getElementById("filterEmployee")?.value;
+
+  if (!nameInput || !codeInput) return;
+
+  const name = nameInput.value;
+  const code = codeInput.value;
 
   if (!name.trim() || !code.trim())
     return alert("أدخل البيانات كاملة");
@@ -543,8 +587,8 @@ async function addFurniture() {
     employee: doc(db, "Employees", empId)
   });
 
-  document.getElementById("furnitureName").value = "";
-  document.getElementById("furnitureCode").value = "";
+  nameInput.value = "";
+  codeInput.value = "";
   loadFurniture();
 }
 
@@ -554,6 +598,7 @@ async function addFurniture() {
 async function loadFurniture() {
   const list = document.getElementById("furnitureList");
   if (!list) return;
+
   list.innerHTML = "";
 
   const snap = await getDocs(collection(db, "Furniture"));
@@ -591,6 +636,35 @@ async function loadFurniture() {
     `;
   }
 }
+
+/* ---------------------------------------------------
+   حذف أثاث
+--------------------------------------------------- */
+async function deleteFurniture(id) {
+  await deleteDoc(doc(db, "Furniture", id));
+  loadFurniture();
+}
+
+/* ---------------------------------------------------
+   إعادة تحميل كل شيء (بدون لمس الترويسة)
+--------------------------------------------------- */
+async function reloadAll() {
+  loadHierarchyTree();
+  loadEmployees();
+  loadDevices();
+  loadVehicles();
+  loadFurniture();
+
+  loadDepartmentsSelect("divDeptSelect");
+  loadDepartmentsSelect("empDeptSelect");
+
+  loadEmployeesSelect("deptManagerSelect");
+  loadEmployeesSelect("divManagerSelect");
+}
+
+/* ---------------------------------------------------
+   ربط الدوال بالـ window
+--------------------------------------------------- */
 window.addDepartment = addDepartment;
 window.addSection = addSection;
 
@@ -617,4 +691,10 @@ window.loadDevices = loadDevices;
 window.loadVehicles = loadVehicles;
 window.loadFurniture = loadFurniture;
 
-/* ------------------------------------------------
+/* ---------------------------------------------------
+   تشغيل أولي عند تحميل الصفحة
+--------------------------------------------------- */
+window.addEventListener("load", () => {
+  filterLoadDepartments();
+  reloadAll();
+});
