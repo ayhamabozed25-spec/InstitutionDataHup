@@ -1,24 +1,6 @@
 body {
-  font-family: Arial, sans-serif;
-  direction: rtl;
-  padding: 20px;
+  background: #f8f9fa;
 }
-
-input {
-  padding: 8px;
-  margin: 5px;
-}
-
-button {
-  padding: 8px 12px;
-  margin: 5px;
-  cursor: pointer;
-}
-
-.item {
-  background: #f3f3f3;
-  padding: 10px;
-  margin: 5px 0;
-  display: flex;
-  justify-content: space-between;
+.card {
+  border-radius: 8px;
 }
