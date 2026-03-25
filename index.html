@@ -126,14 +126,22 @@
 
     <h2 class="mb-3">إدارة الموظفين</h2>
 
-    <div class="card mb-4">
-      <div class="card-header">إضافة موظف</div>
-      <div class="card-body">
-        <input id="empName" class="form-control mb-2" placeholder="اسم الموظف">
-        <select id="empHierarchySelect" class="form-select mb-2"></select>
-        <button class="btn btn-primary" onclick="addEmployee()">إضافة</button>
-      </div>
-    </div>
+<div class="card mb-4">
+  <div class="card-header">إضافة موظف</div>
+  <div class="card-body">
+
+    <input id="empName" class="form-control mb-2" placeholder="اسم الموظف">
+
+    <label>القسم</label>
+    <select id="empDeptSelect" class="form-select mb-2" onchange="loadSectionsForEmployee()"></select>
+
+    <label>الشعبة (اختياري)</label>
+    <select id="empSectionSelect" class="form-select mb-2"></select>
+
+    <button class="btn btn-primary" onclick="addEmployee()">إضافة</button>
+  </div>
+</div>
+
 
     <h4>قائمة الموظفين</h4>
     <div id="empList" class="mb-5"></div>
@@ -245,10 +253,19 @@
   <script type="module" src="crud.js"></script>
 
   <script>
-    function showPage(pageId) {
-      document.querySelectorAll('.page').forEach(p => p.classList.remove('active-page'));
-      document.getElementById(pageId).classList.add('active-page');
-    }
+ function showPage(pageId) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active-page'));
+  document.getElementById(pageId).classList.add('active-page');
+
+  const header = document.getElementById("filterHeader");
+
+  if (pageId === "employeesPage" || pageId === "hierarchyPage") {
+    header.style.display = "none";
+  } else {
+    header.style.display = "block";
+  }
+}
+
   </script>
 
 </body>
