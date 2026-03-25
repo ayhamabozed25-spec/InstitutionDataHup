@@ -36,14 +36,13 @@ async function getHierarchyChain(ref) {
 }
 
 /* ---------------------------------------------------
-   الفلترة الصارمة (بدون مؤسسة)
+   الفلترة الصارمة
 --------------------------------------------------- */
 function passesFilter(chain) {
   const dept = document.getElementById("filterDepartment").value;
   const sec  = document.getElementById("filterSection").value;
   const emp  = document.getElementById("filterEmployee").value;
 
-  // إذا لم يتم اختيار قسم → لا شيء يظهر
   if (!dept) return false;
 
   if (emp && chain.employee !== emp) return false;
@@ -112,10 +111,10 @@ async function filterLoadEmployees() {
 
   const snap = await getDocs(collection(db, "Employees"));
 
-  snap.forEach(d => {
+  for (const d of snap.docs) {
     const data = d.data();
 
-    if (!data.hierarchy) return;
+    if (!data.hierarchy) continue;
 
     const hId = data.hierarchy.id;
 
@@ -124,16 +123,12 @@ async function filterLoadEmployees() {
         select.innerHTML += `<option value="${d.id}">${data.name}</option>`;
       }
     } else {
-      // موظف يتبع القسم مباشرة
-      getDoc(doc(db, "Hierarchy", hId)).then(hSnap => {
-        if (hSnap.exists() && hSnap.data().type === "Department" && hId === deptId) {
-          select.innerHTML += `<option value="${d.id}">${data.name}</option>`;
-        }
-      });
+      const hSnap = await getDoc(doc(db, "Hierarchy", hId));
+      if (hSnap.exists() && hSnap.data().type === "Department" && hId === deptId) {
+        select.innerHTML += `<option value="${d.id}">${data.name}</option>`;
+      }
     }
-  });
-
-  reloadAll();
+  }
 }
 
 /* ---------------------------------------------------
@@ -174,24 +169,23 @@ async function loadSectionsSelect(selectId, deptId) {
     }
   });
 }
+
 /* ---------------------------------------------------
    إضافة قسم
 --------------------------------------------------- */
 async function addDepartment() {
   const name = document.getElementById("deptName").value;
-
-  if (!name.trim()) return alert("أدخل اسم القسم");
+  const managerId = document.getElementById("deptManagerSelect").value;
 
   await addDoc(collection(db, "Hierarchy"), {
     name,
     type: "Department",
-    parent: null
+    parent: null,
+    manager: managerId ? doc(db, "Employees", managerId) : null
   });
 
   document.getElementById("deptName").value = "";
   loadHierarchyTree();
-  loadDepartmentsSelect("divDeptSelect");
-  loadDepartmentsSelect("empDeptSelect");
 }
 
 /* ---------------------------------------------------
@@ -200,14 +194,13 @@ async function addDepartment() {
 async function addSection() {
   const name = document.getElementById("divName").value;
   const deptId = document.getElementById("divDeptSelect").value;
-
-  if (!name.trim() || !deptId)
-    return alert("أدخل البيانات كاملة");
+  const managerId = document.getElementById("divManagerSelect").value;
 
   await addDoc(collection(db, "Hierarchy"), {
     name,
     type: "Section",
-    parent: doc(db, "Hierarchy", deptId)
+    parent: doc(db, "Hierarchy", deptId),
+    manager: managerId ? doc(db, "Employees", managerId) : null
   });
 
   document.getElementById("divName").value = "";
@@ -215,7 +208,7 @@ async function addSection() {
 }
 
 /* ---------------------------------------------------
-   عرض الهيكلية بشكل هرمي (H1)
+   عرض الهيكلية بشكل هرمي H1
 --------------------------------------------------- */
 async function loadHierarchyTree() {
   const container = document.getElementById("hierarchyTree");
@@ -233,49 +226,56 @@ async function loadHierarchyTree() {
     if (data.type === "Section") sections.push({ id: d.id, ...data });
   });
 
-  departments.forEach(dept => {
-    // حساب عدد الموظفين في القسم مباشرة
+  for (const dept of departments) {
     let deptEmployees = 0;
+    let managerName = "—";
+
+    if (dept.manager) {
+      const mSnap = await getDoc(dept.manager);
+      if (mSnap.exists()) managerName = mSnap.data().name;
+    }
 
     empSnap.forEach(e => {
       const h = e.data().hierarchy;
-      if (!h) return;
-
-      if (h.id === dept.id) deptEmployees++;
+      if (h && h.id === dept.id) deptEmployees++;
     });
 
     container.innerHTML += `
       <div class="card p-3 mb-3">
-        <h5>${dept.name} <span class="text-muted">(${deptEmployees} موظفين)</span></h5>
+        <h5>${dept.name}</h5>
+        <div class="text-muted">رئيس القسم: ${managerName}</div>
+        <div class="text-muted">عدد الموظفين: ${deptEmployees}</div>
         <div id="dept-${dept.id}-sections"></div>
       </div>
     `;
-  });
+  }
 
-  // عرض الشعب تحت كل قسم
-  sections.forEach(sec => {
+  for (const sec of sections) {
     const parentId = sec.parent?.id;
     const secContainer = document.getElementById(`dept-${parentId}-sections`);
+    if (!secContainer) continue;
 
-    if (!secContainer) return;
-
-    // حساب موظفي الشعبة
     let secEmployees = [];
+    let secManager = "—";
+
+    if (sec.manager) {
+      const mSnap = await getDoc(sec.manager);
+      if (mSnap.exists()) secManager = mSnap.data().name;
+    }
 
     empSnap.forEach(e => {
       const h = e.data().hierarchy;
-      if (!h) return;
-
-      if (h.id === sec.id) secEmployees.push(e.data().name);
+      if (h && h.id === sec.id) secEmployees.push(e.data().name);
     });
 
     secContainer.innerHTML += `
       <div class="section-item">
         <b>- ${sec.name}</b>
+        <div class="text-muted">رئيس الشعبة: ${secManager}</div>
         <div class="text-muted">الموظفون: ${secEmployees.length ? secEmployees.join("، ") : "—"}</div>
       </div>
     `;
-  });
+  }
 }
 
 /* ---------------------------------------------------
@@ -287,23 +287,17 @@ async function loadSectionsForEmployee() {
 }
 
 /* ---------------------------------------------------
-   إضافة موظف
+   إضافة موظف (يسمح بدون قسم أو شعبة)
 --------------------------------------------------- */
 async function addEmployee() {
   const name = document.getElementById("empName").value;
   const deptId = document.getElementById("empDeptSelect").value;
   const secId  = document.getElementById("empSectionSelect").value;
 
-  if (!name.trim() || !deptId)
-    return alert("يجب اختيار قسم على الأقل");
+  let hierarchyRef = null;
 
-  let hierarchyRef;
-
-  if (secId) {
-    hierarchyRef = doc(db, "Hierarchy", secId);
-  } else {
-    hierarchyRef = doc(db, "Hierarchy", deptId);
-  }
+  if (secId) hierarchyRef = doc(db, "Hierarchy", secId);
+  else if (deptId) hierarchyRef = doc(db, "Hierarchy", deptId);
 
   await addDoc(collection(db, "Employees"), {
     name,
@@ -353,6 +347,7 @@ async function deleteEmployee(id) {
   loadEmployees();
   loadHierarchyTree();
 }
+
 /* ---------------------------------------------------
    إضافة جهاز
 --------------------------------------------------- */
@@ -379,7 +374,7 @@ async function addDevice() {
 }
 
 /* ---------------------------------------------------
-   عرض الأجهزة مع الفلترة الصارمة
+   عرض الأجهزة
 --------------------------------------------------- */
 async function loadDevices() {
   const list = document.getElementById("devicesList");
@@ -585,10 +580,9 @@ async function deleteFurniture(id) {
 }
 
 /* ---------------------------------------------------
-   إعادة تحميل كل شيء
+   إعادة تحميل الصفحات فقط (بدون الترويسة)
 --------------------------------------------------- */
 async function reloadAll() {
-  await filterLoadDepartments();
   loadHierarchyTree();
   loadEmployees();
   loadDevices();
@@ -604,30 +598,3 @@ async function reloadAll() {
 --------------------------------------------------- */
 window.addDepartment = addDepartment;
 window.addSection = addSection;
-window.loadHierarchyTree = loadHierarchyTree;
-
-window.addEmployee = addEmployee;
-window.loadEmployees = loadEmployees;
-window.deleteEmployee = deleteEmployee;
-
-window.addDevice = addDevice;
-window.loadDevices = loadDevices;
-window.deleteDevice = deleteDevice;
-
-window.addVehicle = addVehicle;
-window.loadVehicles = loadVehicles;
-window.deleteVehicle = deleteVehicle;
-
-window.addFurniture = addFurniture;
-window.loadFurniture = loadFurniture;
-window.deleteFurniture = deleteFurniture;
-
-window.filterLoadDepartments = filterLoadDepartments;
-window.filterLoadSections = filterLoadSections;
-window.filterLoadEmployees = filterLoadEmployees;
-
-window.loadSectionsForEmployee = loadSectionsForEmployee;
-
-window.reloadAll = reloadAll;
-
-window.onload = reloadAll;
