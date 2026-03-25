@@ -171,11 +171,29 @@ async function loadSectionsSelect(selectId, deptId) {
 }
 
 /* ---------------------------------------------------
+   تحميل الموظفين لأي قائمة (مدير قسم/شعبة)
+--------------------------------------------------- */
+async function loadEmployeesSelect(selectId) {
+  const select = document.getElementById(selectId);
+  if (!select) return;
+
+  select.innerHTML = "<option value=''>بدون مدير</option>";
+
+  const snap = await getDocs(collection(db, "Employees"));
+
+  snap.forEach(d => {
+    select.innerHTML += `<option value="${d.id}">${d.data().name}</option>`;
+  });
+}
+
+/* ---------------------------------------------------
    إضافة قسم
 --------------------------------------------------- */
 async function addDepartment() {
   const name = document.getElementById("deptName").value;
   const managerId = document.getElementById("deptManagerSelect").value;
+
+  if (!name.trim()) return alert("أدخل اسم القسم");
 
   await addDoc(collection(db, "Hierarchy"), {
     name,
@@ -195,6 +213,9 @@ async function addSection() {
   const name = document.getElementById("divName").value;
   const deptId = document.getElementById("divDeptSelect").value;
   const managerId = document.getElementById("divManagerSelect").value;
+
+  if (!name.trim() || !deptId)
+    return alert("أدخل البيانات كاملة");
 
   await addDoc(collection(db, "Hierarchy"), {
     name,
@@ -571,22 +592,4 @@ async function loadFurniture() {
   }
 }
 
-/* ---------------------------------------------------
-   حذف أثاث
---------------------------------------------------- */
-async function deleteFurniture(id) {
-  await deleteDoc(doc(db, "Furniture", id));
-  loadFurniture();
-}
-
-/* ---------------------------------------------------
-   إعادة تحميل الصفحات فقط (بدون الترويسة)
---------------------------------------------------- */
-async function reloadAll() {
-  loadHierarchyTree();
-  loadEmployees();
-  loadDevices();
-  loadVehicles();
-  loadFurniture();
-
-  loadDepartmentsSelect("divDeptSelect");
+/* ------------------------------------------------
