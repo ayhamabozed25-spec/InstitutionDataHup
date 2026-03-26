@@ -326,6 +326,29 @@ function renderResults(results, type) {
   });
 }
 
+
+// ===============================
+//  ربط جميع دوال البحث بـ window
+// ===============================
+
+// الحقول الديناميكية
 window.renderSearchFields = renderSearchFields;
+
+// تنفيذ البحث
 window.executeSearch = executeSearch;
+
+// البحث حسب الأنواع
+window.searchDepartments = searchDepartments;
+window.searchSections = searchSections;
+window.searchEmployees = searchEmployees;
+window.searchDevices = searchDevices;
+window.searchVehicles = searchVehicles;
+window.searchFurniture = searchFurniture;
+
+// عرض النتائج
+window.renderResults = renderResults;
+
+// تحميل القوائم (من crud.js)
+window.loadDepartmentsSelect = loadDepartmentsSelect;
+window.loadSectionsSelect = loadSectionsSelect;
 
