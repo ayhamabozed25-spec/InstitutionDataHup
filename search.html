@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <title>صفحة البحث</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.rtl.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body class="bg-light">
+
+  <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="index.html">نظام الأصول</a>
+      <span class="navbar-text text-white">صفحة البحث</span>
+    </div>
+  </nav>
+
+  <div class="container">
+
+    <!-- بطاقة البحث -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-white">
+        <strong>خيارات البحث</strong>
+      </div>
+
+      <div class="card-body">
+
+        <!-- اختيار نوع البحث -->
+        <div class="mb-3">
+          <label class="form-label">نوع البحث</label>
+          <select id="searchType" class="form-select" onchange="renderSearchFields()">
+            <option value="">اختر نوع البحث</option>
+            <option value="department">الأقسام</option>
+            <option value="section">الشعب</option>
+            <option value="employee">الموظفون</option>
+            <option value="device">الأجهزة</option>
+            <option value="vehicle">المركبات</option>
+            <option value="furniture">الأثاث</option>
+          </select>
+        </div>
+
+        <!-- الحقول الديناميكية -->
+        <div id="searchFields"></div>
+
+        <button class="btn btn-primary mt-3" onclick="executeSearch()">بحث</button>
+      </div>
+    </div>
+
+    <!-- النتائج -->
+    <div class="card shadow-sm">
+      <div class="card-header bg-white">
+        <strong>نتائج البحث</strong>
+      </div>
+      <div class="card-body" id="resultsContainer">
+        <div class="text-muted">لا توجد نتائج بعد…</div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script type="module" src="firebase.js"></script>
+  <script type="module" src="crud.js"></script>
+  <script type="module" src="search.js"></script>
+
+</body>
+</html>
