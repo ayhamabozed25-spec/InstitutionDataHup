@@ -540,7 +540,9 @@ export async function saveVehicleEdit() {
     employee: empId ? doc(db, "Employees", empId) : null
   });
 
-  bootstrap.Modal.getInstance(document.getElementById("editVehicleModal")).
+  bootstrap.Modal.getInstance(document.getElementById("editVehicleModal")).hide.alert("تم تعديل المركبة");
+
+    }
     window.addDepartment = addDepartment;
 window.addSection = addSection;
 window.addEmployee = addEmployee;
