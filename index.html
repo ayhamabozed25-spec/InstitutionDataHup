@@ -5,23 +5,19 @@
   <title>نظام الأصول - إدارة البيانات</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <!-- Bootstrap CSS -->
-  <link
-    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.rtl.min.css"
-    rel="stylesheet"
-  />
-
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.rtl.min.css" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
 </head>
+
 <body class="bg-light">
 
   <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
     <div class="container-fluid">
       <a class="navbar-brand" href="#">نظام الأصول</a>
-      <div>
-        <a href="search.html" class="btn btn-outline-light btn-sm">
-          صفحة البحث
-        </a>
+
+      <div class="d-flex gap-2">
+        <a href="search.html" class="btn btn-outline-light btn-sm">صفحة البحث</a>
+        <a href="search-buildings.html" class="btn btn-outline-light btn-sm">بحث الأبنية</a>
       </div>
     </div>
   </nav>
@@ -29,52 +25,49 @@
   <div class="container mb-5">
     <div class="card shadow-sm">
       <div class="card-header bg-white border-0">
-        <ul class="nav nav-tabs card-header-tabs" id="mainTabs" role="tablist">
+        <ul class="nav nav-tabs card-header-tabs">
+
           <li class="nav-item">
-            <button class="nav-link active" id="dept-tab" data-bs-toggle="tab"
-              data-bs-target="#dept-pane" type="button" role="tab">
-              الأقسام والشعب
-            </button>
+            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#dept-pane">الأقسام والشعب</button>
           </li>
+
           <li class="nav-item">
-            <button class="nav-link" id="emp-tab" data-bs-toggle="tab"
-              data-bs-target="#emp-pane" type="button" role="tab">
-              الموظفون
-            </button>
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#emp-pane">الـموظفون</button>
           </li>
+
           <li class="nav-item">
-            <button class="nav-link" id="assets-tab" data-bs-toggle="tab"
-              data-bs-target="#assets-pane" type="button" role="tab">
-              الأصول (أجهزة / مركبات / أثاث)
-            </button>
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#assets-pane">الأصول</button>
           </li>
+
+          <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#buildings-pane">الأبنية والمؤسسات</button>
+          </li>
+
         </ul>
       </div>
 
       <div class="card-body tab-content">
 
         <!-- الأقسام والشعب -->
-        <div class="tab-pane fade show active" id="dept-pane" role="tabpanel">
+        <div class="tab-pane fade show active" id="dept-pane">
           <div class="row g-4">
+
             <!-- إضافة قسم -->
             <div class="col-md-6">
               <div class="card h-100">
-                <div class="card-header bg-light">
-                  <strong>إضافة قسم</strong>
-                </div>
+                <div class="card-header bg-light"><strong>إضافة قسم</strong></div>
                 <div class="card-body">
-                  <div class="mb-3">
-                    <label class="form-label">اسم القسم</label>
-                    <input type="text" id="deptName" class="form-control" />
-                  </div>
-                  <div class="mb-3">
-                    <label class="form-label">رئيس القسم (بحث)</label>
-                    <input type="text" id="deptManagerSearch" class="form-control"
-                      placeholder="اكتب اسم الموظف..." oninput="searchManagerForDept(this.value)" />
-                    <input type="hidden" id="deptManagerSelect" />
-                    <div id="deptManagerResults" class="autocomplete-results"></div>
-                  </div>
-                  <button class="btn btn-primary" onclick="addDepartment()">حفظ القسم</button>
+
+                  <label class="form-label">اسم القسم</label>
+                  <input type="text" id="deptName" class="form-control mb-3">
+
+                  <label class="form-label">رئيس القسم</label>
+                  <input type="text" id="deptManagerSearch" class="form-control" oninput="searchManagerForDept(this.value)">
+                  <input type="hidden" id="deptManagerSelect">
+                  <div id="deptManagerResults" class="autocomplete-results"></div>
+
+                  <button class="btn btn-primary mt-3" onclick="addDepartment()">حفظ القسم</button>
+
                 </div>
               </div>
             </div>
@@ -82,86 +75,79 @@
             <!-- إضافة شعبة -->
             <div class="col-md-6">
               <div class="card h-100">
-                <div class="card-header bg-light">
-                  <strong>إضافة شعبة</strong>
-                </div>
+                <div class="card-header bg-light"><strong>إضافة شعبة</strong></div>
                 <div class="card-body">
-                  <div class="mb-3">
-                    <label class="form-label">اسم الشعبة</label>
-                    <input type="text" id="divName" class="form-control" />
-                  </div>
-                  <div class="mb-3">
-                    <label class="form-label">القسم التابع له</label>
-                    <select id="divDeptSelect" class="form-select"></select>
-                  </div>
-                  <div class="mb-3">
-                    <label class="form-label">رئيس الشعبة (بحث)</label>
-                    <input type="text" id="divManagerSearch" class="form-control"
-                      placeholder="اكتب اسم الموظف..." oninput="searchManagerForSection(this.value)" />
-                    <input type="hidden" id="divManagerSelect" />
-                    <div id="divManagerResults" class="autocomplete-results"></div>
-                  </div>
-                  <button class="btn btn-primary" onclick="addSection()">حفظ الشعبة</button>
+
+                  <label class="form-label">اسم الشعبة</label>
+                  <input type="text" id="divName" class="form-control mb-3">
+
+                  <label class="form-label">القسم التابع له</label>
+                  <select id="divDeptSelect" class="form-select mb-3"></select>
+
+                  <label class="form-label">رئيس الشعبة</label>
+                  <input type="text" id="divManagerSearch" class="form-control" oninput="searchManagerForSection(this.value)">
+                  <input type="hidden" id="divManagerSelect">
+                  <div id="divManagerResults" class="autocomplete-results"></div>
+
+                  <button class="btn btn-primary mt-3" onclick="addSection()">حفظ الشعبة</button>
+
                 </div>
               </div>
             </div>
+
           </div>
         </div>
 
         <!-- الموظفون -->
-        <div class="tab-pane fade" id="emp-pane" role="tabpanel">
+        <div class="tab-pane fade" id="emp-pane">
           <div class="row g-4">
             <div class="col-md-8">
+
               <div class="card">
-                <div class="card-header bg-light">
-                  <strong>إضافة موظف</strong>
-                </div>
+                <div class="card-header bg-light"><strong>إضافة موظف</strong></div>
                 <div class="card-body">
-                  <div class="mb-3">
-                    <label class="form-label">اسم الموظف</label>
-                    <input type="text" id="empName" class="form-control" />
-                  </div>
-                  <div class="mb-3">
-                    <label class="form-label">القسم</label>
-                    <select id="empDeptSelect" class="form-select" onchange="loadSectionsForEmployee()"></select>
-                  </div>
-                  <div class="mb-3">
-                    <label class="form-label">الشعبة (اختياري)</label>
-                    <select id="empSectionSelect" class="form-select"></select>
-                  </div>
+
+                  <label class="form-label">اسم الموظف</label>
+                  <input type="text" id="empName" class="form-control mb-3">
+
+                  <label class="form-label">القسم</label>
+                  <select id="empDeptSelect" class="form-select mb-3" onchange="loadSectionsForEmployee()"></select>
+
+                  <label class="form-label">الشعبة</label>
+                  <select id="empSectionSelect" class="form-select mb-3"></select>
+
                   <button class="btn btn-primary" onclick="addEmployee()">حفظ الموظف</button>
+
                 </div>
               </div>
+
             </div>
           </div>
         </div>
 
         <!-- الأصول -->
-        <div class="tab-pane fade" id="assets-pane" role="tabpanel">
+        <div class="tab-pane fade" id="assets-pane">
           <div class="row g-4">
+
             <!-- جهاز -->
             <div class="col-md-4">
               <div class="card h-100">
-                <div class="card-header bg-light">
-                  <strong>إضافة جهاز</strong>
-                </div>
+                <div class="card-header bg-light"><strong>إضافة جهاز</strong></div>
                 <div class="card-body">
-                  <div class="mb-3">
-                    <label class="form-label">اسم الجهاز</label>
-                    <input type="text" id="deviceName" class="form-control" />
-                  </div>
-                  <div class="mb-3">
-                    <label class="form-label">السيريال</label>
-                    <input type="text" id="deviceSerial" class="form-control" />
-                  </div>
-                  <div class="mb-3">
-                    <label class="form-label">الموظف المستلم (بحث)</label>
-                    <input type="text" id="deviceEmpSearch" class="form-control"
-                      placeholder="اكتب اسم الموظف..." oninput="searchEmployeeForDevice(this.value)" />
-                    <input type="hidden" id="deviceEmpHidden" />
-                    <div id="deviceEmpResults" class="autocomplete-results"></div>
-                  </div>
-                  <button class="btn btn-primary" onclick="addDevice()">حفظ الجهاز</button>
+
+                  <label class="form-label">اسم الجهاز</label>
+                  <input type="text" id="deviceName" class="form-control mb-3">
+
+                  <label class="form-label">السيريال</label>
+                  <input type="text" id="deviceSerial" class="form-control mb-3">
+
+                  <label class="form-label">الموظف المستلم</label>
+                  <input type="text" id="deviceEmpSearch" class="form-control" oninput="searchEmployeeForDevice(this.value)">
+                  <input type="hidden" id="deviceEmpHidden">
+                  <div id="deviceEmpResults" class="autocomplete-results"></div>
+
+                  <button class="btn btn-primary mt-3" onclick="addDevice()">حفظ الجهاز</button>
+
                 </div>
               </div>
             </div>
@@ -169,26 +155,22 @@
             <!-- مركبة -->
             <div class="col-md-4">
               <div class="card h-100">
-                <div class="card-header bg-light">
-                  <strong>إضافة مركبة</strong>
-                </div>
+                <div class="card-header bg-light"><strong>إضافة مركبة</strong></div>
                 <div class="card-body">
-                  <div class="mb-3">
-                    <label class="form-label">رقم اللوحة</label>
-                    <input type="text" id="vehiclePlate" class="form-control" />
-                  </div>
-                  <div class="mb-3">
-                    <label class="form-label">الموديل</label>
-                    <input type="text" id="vehicleModel" class="form-control" />
-                  </div>
-                  <div class="mb-3">
-                    <label class="form-label">الموظف المستلم (بحث)</label>
-                    <input type="text" id="vehicleEmpSearch" class="form-control"
-                      placeholder="اكتب اسم الموظف..." oninput="searchEmployeeForVehicle(this.value)" />
-                    <input type="hidden" id="vehicleEmpHidden" />
-                    <div id="vehicleEmpResults" class="autocomplete-results"></div>
-                  </div>
-                  <button class="btn btn-primary" onclick="addVehicle()">حفظ المركبة</button>
+
+                  <label class="form-label">رقم اللوحة</label>
+                  <input type="text" id="vehiclePlate" class="form-control mb-3">
+
+                  <label class="form-label">الموديل</label>
+                  <input type="text" id="vehicleModel" class="form-control mb-3">
+
+                  <label class="form-label">الموظف المستلم</label>
+                  <input type="text" id="vehicleEmpSearch" class="form-control" oninput="searchEmployeeForVehicle(this.value)">
+                  <input type="hidden" id="vehicleEmpHidden">
+                  <div id="vehicleEmpResults" class="autocomplete-results"></div>
+
+                  <button class="btn btn-primary mt-3" onclick="addVehicle()">حفظ المركبة</button>
+
                 </div>
               </div>
             </div>
@@ -196,26 +178,22 @@
             <!-- أثاث -->
             <div class="col-md-4">
               <div class="card h-100">
-                <div class="card-header bg-light">
-                  <strong>إضافة أثاث</strong>
-                </div>
+                <div class="card-header bg-light"><strong>إضافة أثاث</strong></div>
                 <div class="card-body">
-                  <div class="mb-3">
-                    <label class="form-label">اسم الأثاث</label>
-                    <input type="text" id="furnitureName" class="form-control" />
-                  </div>
-                  <div class="mb-3">
-                    <label class="form-label">الكود</label>
-                    <input type="text" id="furnitureCode" class="form-control" />
-                  </div>
-                  <div class="mb-3">
-                    <label class="form-label">الموظف المستلم (بحث)</label>
-                    <input type="text" id="furnitureEmpSearch" class="form-control"
-                      placeholder="اكتب اسم الموظف..." oninput="searchEmployeeForFurniture(this.value)" />
-                    <input type="hidden" id="furnitureEmpHidden" />
-                    <div id="furnitureEmpResults" class="autocomplete-results"></div>
-                  </div>
-                  <button class="btn btn-primary" onclick="addFurniture()">حفظ الأثاث</button>
+
+                  <label class="form-label">اسم الأثاث</label>
+                  <input type="text" id="furnitureName" class="form-control mb-3">
+
+                  <label class="form-label">الكود</label>
+                  <input type="text" id="furnitureCode" class="form-control mb-3">
+
+                  <label class="form-label">الموظف المستلم</label>
+                  <input type="text" id="furnitureEmpSearch" class="form-control" oninput="searchEmployeeForFurniture(this.value)">
+                  <input type="hidden" id="furnitureEmpHidden">
+                  <div id="furnitureEmpResults" class="autocomplete-results"></div>
+
+                  <button class="btn btn-primary mt-3" onclick="addFurniture()">حفظ الأثاث</button>
+
                 </div>
               </div>
             </div>
@@ -223,14 +201,98 @@
           </div>
         </div>
 
+        <!-- الأبنية والمؤسسات -->
+        <div class="tab-pane fade" id="buildings-pane">
+          <div class="card">
+            <div class="card-header bg-light"><strong>إضافة مبنى / مؤسسة</strong></div>
+            <div class="card-body">
+
+              <div class="row">
+
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">اسم المؤسسة</label>
+                  <input type="text" id="b_name" class="form-control">
+                </div>
+
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">نوع المؤسسة</label>
+                  <input type="text" id="b_type" class="form-control">
+                </div>
+
+                <div class="col-md-12 mb-3">
+                  <label class="form-label">العنوان</label>
+                  <input type="text" id="b_address" class="form-control">
+                </div>
+
+                <div class="col-md-4 mb-3">
+                  <label class="form-label">سنة الإنشاء</label>
+                  <input type="number" id="b_year" class="form-control">
+                </div>
+
+                <div class="col-md-4 mb-3">
+                  <label class="form-label">عدد الطوابق</label>
+                  <input type="number" id="b_floors" class="form-control">
+                </div>
+
+                <div class="col-md-4 mb-3">
+                  <label class="form-label">حالة المبنى</label>
+                  <select id="b_condition" class="form-select">
+                    <option>جيد</option>
+                    <option>متوسط</option>
+                    <option>يحتاج صيانة</option>
+                  </select>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">نقاط القوة</label>
+                  <textarea id="b_strengths" class="form-control"></textarea>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">نقاط الضعف</label>
+                  <textarea id="b_weaknesses" class="form-control"></textarea>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">الفرص الداخلية</label>
+                  <textarea id="b_internal" class="form-control"></textarea>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">الفرص الخارجية</label>
+                  <textarea id="b_external" class="form-control"></textarea>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">المشاريع المخططة</label>
+                  <textarea id="b_projects" class="form-control"></textarea>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">التحديات</label>
+                  <textarea id="b_challenges" class="form-control"></textarea>
+                </div>
+
+                <div class="col-md-12 mb-3">
+                  <label class="form-label">الخدمات المقدمة</label>
+                  <textarea id="b_services" class="form-control"></textarea>
+                </div>
+
+              </div>
+
+              <button class="btn btn-primary" onclick="addBuilding()">حفظ البيانات</button>
+
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
   </div>
 
-  <!-- Bootstrap JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-
   <script type="module" src="firebase.js"></script>
   <script type="module" src="crud.js"></script>
+
 </body>
 </html>
