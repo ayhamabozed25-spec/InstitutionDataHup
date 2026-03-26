@@ -325,3 +325,7 @@ function renderResults(results, type) {
     `;
   });
 }
+
+window.renderSearchFields = renderSearchFields;
+window.executeSearch = executeSearch;
+
