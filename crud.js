@@ -17,7 +17,7 @@ import { db } from "./firebase.js";
 // ===============================
 //  تحميل الأقسام
 // ===============================
-export async function loadDepartmentsSelect(selectId) {
+async function loadDepartmentsSelect(selectId) {
   const select = document.getElementById(selectId);
   if (!select) return;
 
@@ -39,7 +39,7 @@ export async function loadDepartmentsSelect(selectId) {
 // ===============================
 //  تحميل الشعب حسب القسم
 // ===============================
-export async function loadSectionsSelect(selectId, deptId) {
+async function loadSectionsSelect(selectId, deptId) {
   const select = document.getElementById(selectId);
   if (!select) return;
 
@@ -63,7 +63,7 @@ export async function loadSectionsSelect(selectId, deptId) {
 // ===============================
 //  تحميل الشعب عند اختيار قسم للموظف
 // ===============================
-export async function loadSectionsForEmployee() {
+async function loadSectionsForEmployee() {
   const deptId = document.getElementById("empDeptSelect")?.value;
   await loadSectionsSelect("empSectionSelect", deptId);
 }
@@ -72,7 +72,7 @@ export async function loadSectionsForEmployee() {
 // ===============================
 //  إضافة قسم
 // ===============================
-export async function addDepartment() {
+async function addDepartment() {
   const name = document.getElementById("deptName").value;
   const managerId = document.getElementById("deptManagerSelect").value;
 
@@ -97,7 +97,7 @@ export async function addDepartment() {
 // ===============================
 //  إضافة شعبة
 // ===============================
-export async function addSection() {
+async function addSection() {
   const name = document.getElementById("divName").value;
   const deptId = document.getElementById("divDeptSelect").value;
   const managerId = document.getElementById("divManagerSelect").value;
@@ -123,7 +123,7 @@ export async function addSection() {
 // ===============================
 //  إضافة موظف
 // ===============================
-export async function addEmployee() {
+async function addEmployee() {
   const name = document.getElementById("empName").value;
   const deptId = document.getElementById("empDeptSelect").value;
   const secId = document.getElementById("empSectionSelect").value;
@@ -150,7 +150,7 @@ export async function addEmployee() {
 // ===============================
 //  إضافة جهاز
 // ===============================
-export async function addDevice() {
+async function addDevice() {
   const name = document.getElementById("deviceName").value;
   const serial = document.getElementById("deviceSerial").value;
   const empId = document.getElementById("deviceEmpHidden").value;
@@ -177,7 +177,7 @@ export async function addDevice() {
 // ===============================
 //  إضافة مركبة
 // ===============================
-export async function addVehicle() {
+async function addVehicle() {
   const plate = document.getElementById("vehiclePlate").value;
   const model = document.getElementById("vehicleModel").value;
   const empId = document.getElementById("vehicleEmpHidden").value;
@@ -204,7 +204,7 @@ export async function addVehicle() {
 // ===============================
 //  إضافة أثاث
 // ===============================
-export async function addFurniture() {
+async function addFurniture() {
   const name = document.getElementById("furnitureName").value;
   const code = document.getElementById("furnitureCode").value;
   const empId = document.getElementById("furnitureEmpHidden").value;
@@ -250,7 +250,7 @@ async function searchEmployeesByName(text) {
 // ===============================
 //  Autocomplete — مدير قسم
 // ===============================
-export async function searchManagerForDept(text) {
+async function searchManagerForDept(text) {
   const box = document.getElementById("deptManagerResults");
   box.innerHTML = "";
 
@@ -271,7 +271,7 @@ export async function searchManagerForDept(text) {
 // ===============================
 //  Autocomplete — مدير شعبة
 // ===============================
-export async function searchManagerForSection(text) {
+async function searchManagerForSection(text) {
   const box = document.getElementById("divManagerResults");
   box.innerHTML = "";
 
@@ -292,7 +292,7 @@ export async function searchManagerForSection(text) {
 // ===============================
 //  Autocomplete — موظف للجهاز
 // ===============================
-export async function searchEmployeeForDevice(text) {
+async function searchEmployeeForDevice(text) {
   const box = document.getElementById("deviceEmpResults");
   box.innerHTML = "";
 
@@ -313,7 +313,7 @@ export async function searchEmployeeForDevice(text) {
 // ===============================
 //  Autocomplete — موظف للمركبة
 // ===============================
-export async function searchEmployeeForVehicle(text) {
+async function searchEmployeeForVehicle(text) {
   const box = document.getElementById("vehicleEmpResults");
   box.innerHTML = "";
 
@@ -334,7 +334,7 @@ export async function searchEmployeeForVehicle(text) {
 // ===============================
 //  Autocomplete — موظف للأثاث
 // ===============================
-export async function searchEmployeeForFurniture(text) {
+async function searchEmployeeForFurniture(text) {
   const box = document.getElementById("furnitureEmpResults");
   box.innerHTML = "";
 
@@ -357,14 +357,14 @@ export async function searchEmployeeForFurniture(text) {
 // ===============================
 
 // --- تعديل قسم ---
-export async function openEditDepartment(id) {
+async function openEditDepartment(id) {
   const snap = await getDoc(doc(db, "Hierarchy", id));
   if (!snap.exists()) return;
 
   const data = snap.data();
 
   document.getElementById("editDeptId").value = id;
-  document.getElementById("editDeptName").value = data.name;
+  document.getElementById("editDeptName").value = data.name || "";
 
   await loadEmployeesSelect("editDeptManager");
   document.getElementById("editDeptManager").value = data.manager?.id || "";
@@ -372,7 +372,7 @@ export async function openEditDepartment(id) {
   new bootstrap.Modal(document.getElementById("editDepartmentModal")).show();
 }
 
-export async function saveDepartmentEdit() {
+async function saveDepartmentEdit() {
   const id = document.getElementById("editDeptId").value;
   const name = document.getElementById("editDeptName").value;
   const managerId = document.getElementById("editDeptManager").value;
@@ -388,14 +388,14 @@ export async function saveDepartmentEdit() {
 
 
 // --- تعديل شعبة ---
-export async function openEditSection(id) {
+async function openEditSection(id) {
   const snap = await getDoc(doc(db, "Hierarchy", id));
   if (!snap.exists()) return;
 
   const data = snap.data();
 
   document.getElementById("editSectionId").value = id;
-  document.getElementById("editSectionName").value = data.name;
+  document.getElementById("editSectionName").value = data.name || "";
 
   await loadDepartmentsSelect("editSectionDept");
   document.getElementById("editSectionDept").value = data.parent?.id || "";
@@ -406,7 +406,7 @@ export async function openEditSection(id) {
   new bootstrap.Modal(document.getElementById("editSectionModal")).show();
 }
 
-export async function saveSectionEdit() {
+async function saveSectionEdit() {
   const id = document.getElementById("editSectionId").value;
   const name = document.getElementById("editSectionName").value;
   const deptId = document.getElementById("editSectionDept").value;
@@ -424,14 +424,14 @@ export async function saveSectionEdit() {
 
 
 // --- تعديل موظف ---
-export async function openEditEmployee(id) {
+async function openEditEmployee(id) {
   const snap = await getDoc(doc(db, "Employees", id));
   if (!snap.exists()) return;
 
   const data = snap.data();
 
   document.getElementById("editEmpId").value = id;
-  document.getElementById("editEmpName").value = data.name;
+  document.getElementById("editEmpName").value = data.name || "";
 
   await loadDepartmentsSelect("editEmpDept");
 
@@ -442,8 +442,9 @@ export async function openEditEmployee(id) {
     const hSnap = await getDoc(data.hierarchy);
     if (hSnap.exists()) {
       const hData = hSnap.data();
-      if (hData.type === "Department") deptId = data.hierarchy.id;
-      else {
+      if (hData.type === "Department") {
+        deptId = data.hierarchy.id;
+      } else {
         secId = data.hierarchy.id;
         deptId = hData.parent?.id || "";
       }
@@ -457,7 +458,12 @@ export async function openEditEmployee(id) {
   new bootstrap.Modal(document.getElementById("editEmployeeModal")).show();
 }
 
-export async function saveEmployeeEdit() {
+async function loadEditEmpSections() {
+  const deptId = document.getElementById("editEmpDept").value;
+  await loadSectionsSelect("editEmpSection", deptId);
+}
+
+async function saveEmployeeEdit() {
   const id = document.getElementById("editEmpId").value;
   const name = document.getElementById("editEmpName").value;
   const deptId = document.getElementById("editEmpDept").value;
@@ -478,15 +484,15 @@ export async function saveEmployeeEdit() {
 
 
 // --- تعديل جهاز ---
-export async function openEditDevice(id) {
+async function openEditDevice(id) {
   const snap = await getDoc(doc(db, "Devices", id));
   if (!snap.exists()) return;
 
   const data = snap.data();
 
   document.getElementById("editDeviceId").value = id;
-  document.getElementById("editDeviceName").value = data.name;
-  document.getElementById("editDeviceSerial").value = data.serial;
+  document.getElementById("editDeviceName").value = data.name || "";
+  document.getElementById("editDeviceSerial").value = data.serial || "";
 
   await loadEmployeesSelect("editDeviceEmployee");
   document.getElementById("editDeviceEmployee").value = data.employee?.id || "";
@@ -494,7 +500,7 @@ export async function openEditDevice(id) {
   new bootstrap.Modal(document.getElementById("editDeviceModal")).show();
 }
 
-export async function saveDeviceEdit() {
+async function saveDeviceEdit() {
   const id = document.getElementById("editDeviceId").value;
   const name = document.getElementById("editDeviceName").value;
   const serial = document.getElementById("editDeviceSerial").value;
@@ -512,15 +518,15 @@ export async function saveDeviceEdit() {
 
 
 // --- تعديل مركبة ---
-export async function openEditVehicle(id) {
+async function openEditVehicle(id) {
   const snap = await getDoc(doc(db, "Vehicles", id));
   if (!snap.exists()) return;
 
   const data = snap.data();
 
   document.getElementById("editVehicleId").value = id;
-  document.getElementById("editVehiclePlate").value = data.plate;
-  document.getElementById("editVehicleModel").value = data.model;
+  document.getElementById("editVehiclePlate").value = data.plate || "";
+  document.getElementById("editVehicleModel").value = data.model || "";
 
   await loadEmployeesSelect("editVehicleEmployee");
   document.getElementById("editVehicleEmployee").value = data.employee?.id || "";
@@ -528,7 +534,7 @@ export async function openEditVehicle(id) {
   new bootstrap.Modal(document.getElementById("editVehicleModal")).show();
 }
 
-export async function saveVehicleEdit() {
+async function saveVehicleEdit() {
   const id = document.getElementById("editVehicleId").value;
   const plate = document.getElementById("editVehiclePlate").value;
   const model = document.getElementById("editVehicleModel").value;
@@ -540,15 +546,68 @@ export async function saveVehicleEdit() {
     employee: empId ? doc(db, "Employees", empId) : null
   });
 
-  bootstrap.Modal.getInstance(document.getElementById("editVehicleModal")).hide.alert("تم تعديل المركبة");
+  bootstrap.Modal.getInstance(document.getElementById("editVehicleModal")).hide();
+  alert("تم تعديل المركبة");
+}
 
-    }
-  
+
+// --- تعديل أثاث ---
+async function openEditFurniture(id) {
+  const snap = await getDoc(doc(db, "Furniture", id));
+  if (!snap.exists()) return;
+
+  const data = snap.data();
+
+  document.getElementById("editFurnitureId").value = id;
+  document.getElementById("editFurnitureName").value = data.name || "";
+  document.getElementById("editFurnitureCode").value = data.code || "";
+
+  await loadEmployeesSelect("editFurnitureEmployee");
+  document.getElementById("editFurnitureEmployee").value = data.employee?.id || "";
+
+  new bootstrap.Modal(document.getElementById("editFurnitureModal")).show();
+}
+
+async function saveFurnitureEdit() {
+  const id = document.getElementById("editFurnitureId").value;
+  const name = document.getElementById("editFurnitureName").value;
+  const code = document.getElementById("editFurnitureCode").value;
+  const empId = document.getElementById("editFurnitureEmployee").value;
+
+  await updateDoc(doc(db, "Furniture", id), {
+    name,
+    code,
+    employee: empId ? doc(db, "Employees", empId) : null
+  });
+
+  bootstrap.Modal.getInstance(document.getElementById("editFurnitureModal")).hide();
+  alert("تم تعديل الأثاث");
+}
+
+
+// ===============================
+//  تحميل الموظفين لأي قائمة (مدير قسم/شعبة/أصل)
+// ===============================
+async function loadEmployeesSelect(selectId) {
+  const select = document.getElementById(selectId);
+  if (!select) return;
+
+  const current = select.value;
+  select.innerHTML = "<option value=''>بدون اختيار</option>";
+
+  const snap = await getDocs(collection(db, "Employees"));
+  snap.forEach(d => {
+    const data = d.data();
+    select.innerHTML += `<option value="${d.id}">${data.name}</option>`;
+  });
+
+  if (current) select.value = current;
+}
+
+
 // ===============================
 //  ربط جميع الدوال بـ window
 // ===============================
-
-// الإضافة
 window.addDepartment = addDepartment;
 window.addSection = addSection;
 window.addEmployee = addEmployee;
@@ -556,39 +615,40 @@ window.addDevice = addDevice;
 window.addVehicle = addVehicle;
 window.addFurniture = addFurniture;
 
-// التحميل
 window.loadDepartmentsSelect = loadDepartmentsSelect;
 window.loadSectionsSelect = loadSectionsSelect;
 window.loadSectionsForEmployee = loadSectionsForEmployee;
 
-// البحث داخل الحقول (Autocomplete)
 window.searchManagerForDept = searchManagerForDept;
 window.searchManagerForSection = searchManagerForSection;
 window.searchEmployeeForDevice = searchEmployeeForDevice;
 window.searchEmployeeForVehicle = searchEmployeeForVehicle;
 window.searchEmployeeForFurniture = searchEmployeeForFurniture;
 
-// التعديل — الأقسام
 window.openEditDepartment = openEditDepartment;
 window.saveDepartmentEdit = saveDepartmentEdit;
 
-// التعديل — الشعب
 window.openEditSection = openEditSection;
 window.saveSectionEdit = saveSectionEdit;
 
-// التعديل — الموظفين
 window.openEditEmployee = openEditEmployee;
 window.saveEmployeeEdit = saveEmployeeEdit;
 window.loadEditEmpSections = loadEditEmpSections;
 
-// التعديل — الأجهزة
 window.openEditDevice = openEditDevice;
 window.saveDeviceEdit = saveDeviceEdit;
 
-// التعديل — المركبات
 window.openEditVehicle = openEditVehicle;
 window.saveVehicleEdit = saveVehicleEdit;
 
-// التعديل — الأثاث
 window.openEditFurniture = openEditFurniture;
 window.saveFurnitureEdit = saveFurnitureEdit;
+
+
+// ===============================
+//  تهيئة أولية
+// ===============================
+window.addEventListener("DOMContentLoaded", async () => {
+  await loadDepartmentsSelect("divDeptSelect");
+  await loadDepartmentsSelect("empDeptSelect");
+});
