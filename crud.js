@@ -543,36 +543,52 @@ export async function saveVehicleEdit() {
   bootstrap.Modal.getInstance(document.getElementById("editVehicleModal")).hide.alert("تم تعديل المركبة");
 
     }
-    window.addDepartment = addDepartment;
+  
+// ===============================
+//  ربط جميع الدوال بـ window
+// ===============================
+
+// الإضافة
+window.addDepartment = addDepartment;
 window.addSection = addSection;
 window.addEmployee = addEmployee;
 window.addDevice = addDevice;
 window.addVehicle = addVehicle;
 window.addFurniture = addFurniture;
 
-window.openEditDepartment = openEditDepartment;
-window.saveDepartmentEdit = saveDepartmentEdit;
-
-window.openEditSection = openEditSection;
-window.saveSectionEdit = saveSectionEdit;
-
-window.openEditEmployee = openEditEmployee;
-window.saveEmployeeEdit = saveEmployeeEdit;
-
-window.openEditDevice = openEditDevice;
-window.saveDeviceEdit = saveDeviceEdit;
-
-window.openEditVehicle = openEditVehicle;
-window.saveVehicleEdit = saveVehicleEdit;
-
-window.openEditFurniture = openEditFurniture;
-window.saveFurnitureEdit = saveFurnitureEdit;
-
+// التحميل
+window.loadDepartmentsSelect = loadDepartmentsSelect;
+window.loadSectionsSelect = loadSectionsSelect;
 window.loadSectionsForEmployee = loadSectionsForEmployee;
+
+// البحث داخل الحقول (Autocomplete)
 window.searchManagerForDept = searchManagerForDept;
 window.searchManagerForSection = searchManagerForSection;
 window.searchEmployeeForDevice = searchEmployeeForDevice;
 window.searchEmployeeForVehicle = searchEmployeeForVehicle;
 window.searchEmployeeForFurniture = searchEmployeeForFurniture;
 
+// التعديل — الأقسام
+window.openEditDepartment = openEditDepartment;
+window.saveDepartmentEdit = saveDepartmentEdit;
 
+// التعديل — الشعب
+window.openEditSection = openEditSection;
+window.saveSectionEdit = saveSectionEdit;
+
+// التعديل — الموظفين
+window.openEditEmployee = openEditEmployee;
+window.saveEmployeeEdit = saveEmployeeEdit;
+window.loadEditEmpSections = loadEditEmpSections;
+
+// التعديل — الأجهزة
+window.openEditDevice = openEditDevice;
+window.saveDeviceEdit = saveDeviceEdit;
+
+// التعديل — المركبات
+window.openEditVehicle = openEditVehicle;
+window.saveVehicleEdit = saveVehicleEdit;
+
+// التعديل — الأثاث
+window.openEditFurniture = openEditFurniture;
+window.saveFurnitureEdit = saveFurnitureEdit;
