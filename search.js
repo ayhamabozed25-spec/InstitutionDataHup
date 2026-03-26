@@ -6,14 +6,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 import { db } from "./firebase.js";
-import {
-  openEditDepartment,
-  openEditSection,
-  openEditEmployee,
-  openEditDevice,
-  openEditVehicle,
-  openEditFurniture
-} from "./crud.js";
+
 
 
 // ===============================
