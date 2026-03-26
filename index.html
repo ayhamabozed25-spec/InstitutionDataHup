@@ -1,380 +1,236 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8">
-  <title>نظام إدارة الهيكلية والأصول</title>
+  <meta charset="UTF-8" />
+  <title>نظام الأصول - إدارة البيانات</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap CSS -->
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.rtl.min.css"
+    rel="stylesheet"
+  />
 
-  <style>
-    body { direction: rtl; }
-    .page { display: none; }
-    .active-page { display: block; }
-
-    #filterHeader {
-      position: sticky;
-      top: 0;
-      z-index: 1000;
-      background: white;
-      padding: 10px;
-      border-bottom: 2px solid #ddd;
-    }
-
-    .section-item {
-      margin-right: 25px;
-    }
-  </style>
+  <link rel="stylesheet" href="styles.css" />
 </head>
+<body class="bg-light">
 
-<body class="container py-4">
-
-  <!-- Navbar -->
-  <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4 rounded">
+  <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
     <div class="container-fluid">
-      <a class="navbar-brand" href="#">نظام الإدارة</a>
-
+      <a class="navbar-brand" href="#">نظام الأصول</a>
       <div>
-        <button class="btn btn-light me-2" onclick="showPage('hierarchyPage')">الهيكلية</button>
-        <button class="btn btn-light me-2" onclick="showPage('employeesPage')">الموظفين</button>
-        <button class="btn btn-light me-2" onclick="showPage('devicesPage')">الأجهزة</button>
-        <button class="btn btn-light me-2" onclick="showPage('vehiclesPage')">المركبات</button>
-        <button class="btn btn-light me-2" onclick="showPage('furniturePage')">الأثاث</button>
+        <a href="search.html" class="btn btn-outline-light btn-sm">
+          صفحة البحث
+        </a>
       </div>
     </div>
   </nav>
 
-  <!-- Sticky Header Filters -->
-  <div id="filterHeader" class="card p-3 mb-4" style="display:none;">
-    <h5 class="mb-3">التصفية</h5>
-
-    <div class="row g-2">
-
-      <div class="col-md-4">
-        <label>القسم</label>
-        <select id="filterDepartment" class="form-select" onchange="filterLoadSections()"></select>
+  <div class="container mb-5">
+    <div class="card shadow-sm">
+      <div class="card-header bg-white border-0">
+        <ul class="nav nav-tabs card-header-tabs" id="mainTabs" role="tablist">
+          <li class="nav-item">
+            <button class="nav-link active" id="dept-tab" data-bs-toggle="tab"
+              data-bs-target="#dept-pane" type="button" role="tab">
+              الأقسام والشعب
+            </button>
+          </li>
+          <li class="nav-item">
+            <button class="nav-link" id="emp-tab" data-bs-toggle="tab"
+              data-bs-target="#emp-pane" type="button" role="tab">
+              الموظفون
+            </button>
+          </li>
+          <li class="nav-item">
+            <button class="nav-link" id="assets-tab" data-bs-toggle="tab"
+              data-bs-target="#assets-pane" type="button" role="tab">
+              الأصول (أجهزة / مركبات / أثاث)
+            </button>
+          </li>
+        </ul>
       </div>
 
-      <div class="col-md-4">
-        <label>الشعبة</label>
-        <select id="filterSection" class="form-select" onchange="filterLoadEmployees()"></select>
-      </div>
+      <div class="card-body tab-content">
 
-      <div class="col-md-4">
-        <label>الموظف</label>
-        <select id="filterEmployee" class="form-select" onchange="reloadAll()"></select>
-      </div>
+        <!-- الأقسام والشعب -->
+        <div class="tab-pane fade show active" id="dept-pane" role="tabpanel">
+          <div class="row g-4">
+            <!-- إضافة قسم -->
+            <div class="col-md-6">
+              <div class="card h-100">
+                <div class="card-header bg-light">
+                  <strong>إضافة قسم</strong>
+                </div>
+                <div class="card-body">
+                  <div class="mb-3">
+                    <label class="form-label">اسم القسم</label>
+                    <input type="text" id="deptName" class="form-control" />
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label">رئيس القسم (بحث)</label>
+                    <input type="text" id="deptManagerSearch" class="form-control"
+                      placeholder="اكتب اسم الموظف..." oninput="searchManagerForDept(this.value)" />
+                    <input type="hidden" id="deptManagerSelect" />
+                    <div id="deptManagerResults" class="autocomplete-results"></div>
+                  </div>
+                  <button class="btn btn-primary" onclick="addDepartment()">حفظ القسم</button>
+                </div>
+              </div>
+            </div>
 
-    </div>
-  </div>
-
-  <!-- صفحة الهيكلية -->
-  <div id="hierarchyPage" class="page active-page">
-
-    <h2 class="mb-3">إدارة الهيكلية (قسم → شعبة)</h2>
-
-    <!-- إضافة قسم -->
-    <div class="card mb-4">
-      <div class="card-header">إضافة قسم</div>
-      <div class="card-body">
-
-        <input id="deptName" class="form-control mb-2" placeholder="اسم القسم">
-
-        <label>رئيس القسم</label>
-        <select id="deptManagerSelect" class="form-select mb-2"></select>
-
-        <button class="btn btn-primary" onclick="addDepartment()">إضافة</button>
-      </div>
-    </div>
-
-    <!-- إضافة شعبة -->
-    <div class="card mb-4">
-      <div class="card-header">إضافة شعبة</div>
-      <div class="card-body">
-
-        <input id="divName" class="form-control mb-2" placeholder="اسم الشعبة">
-
-        <label>القسم التابع له</label>
-        <select id="divDeptSelect" class="form-select mb-2"></select>
-
-        <label>رئيس الشعبة</label>
-        <select id="divManagerSelect" class="form-select mb-2"></select>
-
-        <button class="btn btn-primary" onclick="addSection()">إضافة</button>
-      </div>
-    </div>
-
-    <h4>الهيكلية</h4>
-    <div id="hierarchyTree" class="mb-5"></div>
-
-  </div>
-
-  <!-- صفحة الموظفين -->
-  <div id="employeesPage" class="page">
-
-    <h2 class="mb-3">إدارة الموظفين</h2>
-
-    <div class="card mb-4">
-      <div class="card-header">إضافة موظف</div>
-      <div class="card-body">
-
-        <input id="empName" class="form-control mb-2" placeholder="اسم الموظف">
-
-        <label>القسم</label>
-        <select id="empDeptSelect" class="form-select mb-2" onchange="loadSectionsForEmployee()"></select>
-
-        <label>الشعبة (اختياري)</label>
-        <select id="empSectionSelect" class="form-select mb-2"></select>
-
-        <button class="btn btn-primary" onclick="addEmployee()">إضافة</button>
-      </div>
-    </div>
-
-    <h4>قائمة الموظفين</h4>
-    <div id="empList" class="mb-5"></div>
-
-  </div>
-
-  <!-- صفحة الأجهزة -->
-  <div id="devicesPage" class="page">
-
-    <h2 class="mb-3">إدارة الأجهزة</h2>
-
-    <div class="card mb-4">
-      <div class="card-header">إضافة جهاز</div>
-      <div class="card-body">
-        <input id="deviceName" class="form-control mb-2" placeholder="اسم الجهاز">
-        <input id="deviceSerial" class="form-control mb-2" placeholder="الرقم التسلسلي">
-
-        <div class="alert alert-info p-2">
-          سيتم ربط الجهاز بالموظف المختار في الترويسة
+            <!-- إضافة شعبة -->
+            <div class="col-md-6">
+              <div class="card h-100">
+                <div class="card-header bg-light">
+                  <strong>إضافة شعبة</strong>
+                </div>
+                <div class="card-body">
+                  <div class="mb-3">
+                    <label class="form-label">اسم الشعبة</label>
+                    <input type="text" id="divName" class="form-control" />
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label">القسم التابع له</label>
+                    <select id="divDeptSelect" class="form-select"></select>
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label">رئيس الشعبة (بحث)</label>
+                    <input type="text" id="divManagerSearch" class="form-control"
+                      placeholder="اكتب اسم الموظف..." oninput="searchManagerForSection(this.value)" />
+                    <input type="hidden" id="divManagerSelect" />
+                    <div id="divManagerResults" class="autocomplete-results"></div>
+                  </div>
+                  <button class="btn btn-primary" onclick="addSection()">حفظ الشعبة</button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <button class="btn btn-primary" onclick="addDevice()">إضافة</button>
-      </div>
-    </div>
-
-    <h4>قائمة الأجهزة</h4>
-    <div id="devicesList" class="mb-5"></div>
-
-  </div>
-
-  <!-- صفحة المركبات -->
-  <div id="vehiclesPage" class="page">
-
-    <h2 class="mb-3">إدارة المركبات</h2>
-
-    <div class="card mb-4">
-      <div class="card-header">إضافة مركبة</div>
-      <div class="card-body">
-        <input id="vehiclePlate" class="form-control mb-2" placeholder="رقم اللوحة">
-        <input id="vehicleModel" class="form-control mb-2" placeholder="الموديل">
-
-        <div class="alert alert-info p-2">
-          سيتم ربط المركبة بالموظف المختار في الترويسة
+        <!-- الموظفون -->
+        <div class="tab-pane fade" id="emp-pane" role="tabpanel">
+          <div class="row g-4">
+            <div class="col-md-8">
+              <div class="card">
+                <div class="card-header bg-light">
+                  <strong>إضافة موظف</strong>
+                </div>
+                <div class="card-body">
+                  <div class="mb-3">
+                    <label class="form-label">اسم الموظف</label>
+                    <input type="text" id="empName" class="form-control" />
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label">القسم</label>
+                    <select id="empDeptSelect" class="form-select" onchange="loadSectionsForEmployee()"></select>
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label">الشعبة (اختياري)</label>
+                    <select id="empSectionSelect" class="form-select"></select>
+                  </div>
+                  <button class="btn btn-primary" onclick="addEmployee()">حفظ الموظف</button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <button class="btn btn-primary" onclick="addVehicle()">إضافة</button>
-      </div>
-    </div>
+        <!-- الأصول -->
+        <div class="tab-pane fade" id="assets-pane" role="tabpanel">
+          <div class="row g-4">
+            <!-- جهاز -->
+            <div class="col-md-4">
+              <div class="card h-100">
+                <div class="card-header bg-light">
+                  <strong>إضافة جهاز</strong>
+                </div>
+                <div class="card-body">
+                  <div class="mb-3">
+                    <label class="form-label">اسم الجهاز</label>
+                    <input type="text" id="deviceName" class="form-control" />
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label">السيريال</label>
+                    <input type="text" id="deviceSerial" class="form-control" />
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label">الموظف المستلم (بحث)</label>
+                    <input type="text" id="deviceEmpSearch" class="form-control"
+                      placeholder="اكتب اسم الموظف..." oninput="searchEmployeeForDevice(this.value)" />
+                    <input type="hidden" id="deviceEmpHidden" />
+                    <div id="deviceEmpResults" class="autocomplete-results"></div>
+                  </div>
+                  <button class="btn btn-primary" onclick="addDevice()">حفظ الجهاز</button>
+                </div>
+              </div>
+            </div>
 
-    <h4>قائمة المركبات</h4>
-    <div id="vehiclesList" class="mb-5"></div>
+            <!-- مركبة -->
+            <div class="col-md-4">
+              <div class="card h-100">
+                <div class="card-header bg-light">
+                  <strong>إضافة مركبة</strong>
+                </div>
+                <div class="card-body">
+                  <div class="mb-3">
+                    <label class="form-label">رقم اللوحة</label>
+                    <input type="text" id="vehiclePlate" class="form-control" />
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label">الموديل</label>
+                    <input type="text" id="vehicleModel" class="form-control" />
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label">الموظف المستلم (بحث)</label>
+                    <input type="text" id="vehicleEmpSearch" class="form-control"
+                      placeholder="اكتب اسم الموظف..." oninput="searchEmployeeForVehicle(this.value)" />
+                    <input type="hidden" id="vehicleEmpHidden" />
+                    <div id="vehicleEmpResults" class="autocomplete-results"></div>
+                  </div>
+                  <button class="btn btn-primary" onclick="addVehicle()">حفظ المركبة</button>
+                </div>
+              </div>
+            </div>
 
-  </div>
+            <!-- أثاث -->
+            <div class="col-md-4">
+              <div class="card h-100">
+                <div class="card-header bg-light">
+                  <strong>إضافة أثاث</strong>
+                </div>
+                <div class="card-body">
+                  <div class="mb-3">
+                    <label class="form-label">اسم الأثاث</label>
+                    <input type="text" id="furnitureName" class="form-control" />
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label">الكود</label>
+                    <input type="text" id="furnitureCode" class="form-control" />
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label">الموظف المستلم (بحث)</label>
+                    <input type="text" id="furnitureEmpSearch" class="form-control"
+                      placeholder="اكتب اسم الموظف..." oninput="searchEmployeeForFurniture(this.value)" />
+                    <input type="hidden" id="furnitureEmpHidden" />
+                    <div id="furnitureEmpResults" class="autocomplete-results"></div>
+                  </div>
+                  <button class="btn btn-primary" onclick="addFurniture()">حفظ الأثاث</button>
+                </div>
+              </div>
+            </div>
 
-  <!-- صفحة الأثاث -->
-  <div id="furniturePage" class="page">
-
-    <h2 class="mb-3">إدارة الأثاث</h2>
-
-    <div class="card mb-4">
-      <div class="card-header">إضافة قطعة أثاث</div>
-      <div class="card-body">
-        <input id="furnitureName" class="form-control mb-2" placeholder="اسم الأثاث">
-        <input id="furnitureCode" class="form-control mb-2" placeholder="الرمز / الكود">
-
-        <div class="alert alert-info p-2">
-          سيتم ربط الأثاث بالموظف المختار في الترويسة
+          </div>
         </div>
 
-        <button class="btn btn-primary" onclick="addFurniture()">إضافة</button>
-      </div>
-    </div>
-
-    <h4>قائمة الأثاث</h4>
-    <div id="furnitureList" class="mb-5"></div>
-
-  </div>
-
-  <!-- Modals -->
-
-  <!-- تعديل قسم -->
-  <div class="modal fade" id="editDepartmentModal" tabindex="-1">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">تعديل قسم</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body">
-          <input id="editDeptId" type="hidden">
-          <label>اسم القسم</label>
-          <input id="editDeptName" class="form-control mb-2">
-          <label>رئيس القسم</label>
-          <select id="editDeptManager" class="form-select mb-2"></select>
-        </div>
-        <div class="modal-footer">
-          <button class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
-          <button class="btn btn-primary" onclick="saveDepartmentEdit()">حفظ</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- تعديل شعبة -->
-  <div class="modal fade" id="editSectionModal" tabindex="-1">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">تعديل شعبة</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body">
-          <input id="editSectionId" type="hidden">
-          <label>اسم الشعبة</label>
-          <input id="editSectionName" class="form-control mb-2">
-          <label>القسم التابع له</label>
-          <select id="editSectionDept" class="form-select mb-2"></select>
-          <label>رئيس الشعبة</label>
-          <select id="editSectionManager" class="form-select mb-2"></select>
-        </div>
-        <div class="modal-footer">
-          <button class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
-          <button class="btn btn-primary" onclick="saveSectionEdit()">حفظ</button>
-        </div>
       </div>
     </div>
   </div>
 
-  <!-- تعديل موظف -->
-  <div class="modal fade" id="editEmployeeModal" tabindex="-1">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">تعديل موظف</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body">
-          <input id="editEmpId" type="hidden">
-          <label>اسم الموظف</label>
-          <input id="editEmpName" class="form-control mb-2">
-          <label>القسم</label>
-          <select id="editEmpDept" class="form-select mb-2" onchange="loadEditEmpSections()"></select>
-          <label>الشعبة</label>
-          <select id="editEmpSection" class="form-select mb-2"></select>
-        </div>
-        <div class="modal-footer">
-          <button class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
-          <button class="btn btn-primary" onclick="saveEmployeeEdit()">حفظ</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- تعديل جهاز -->
-  <div class="modal fade" id="editDeviceModal" tabindex="-1">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">تعديل جهاز</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body">
-          <input id="editDeviceId" type="hidden">
-          <label>اسم الجهاز</label>
-          <input id="editDeviceName" class="form-control mb-2">
-          <label>الرقم التسلسلي</label>
-          <input id="editDeviceSerial" class="form-control mb-2">
-          <label>الموظف المستلم</label>
-          <select id="editDeviceEmployee" class="form-select mb-2"></select>
-        </div>
-        <div class="modal-footer">
-          <button class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
-          <button class="btn btn-primary" onclick="saveDeviceEdit()">حفظ</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- تعديل مركبة -->
-  <div class="modal fade" id="editVehicleModal" tabindex="-1">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">تعديل مركبة</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body">
-          <input id="editVehicleId" type="hidden">
-          <label>رقم اللوحة</label>
-          <input id="editVehiclePlate" class="form-control mb-2">
-          <label>الموديل</label>
-          <input id="editVehicleModel" class="form-control mb-2">
-          <label>الموظف المستلم</label>
-          <select id="editVehicleEmployee" class="form-select mb-2"></select>
-        </div>
-        <div class="modal-footer">
-          <button class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
-          <button class="btn btn-primary" onclick="saveVehicleEdit()">حفظ</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- تعديل أثاث -->
-  <div class="modal fade" id="editFurnitureModal" tabindex="-1">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">تعديل أثاث</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body">
-          <input id="editFurnitureId" type="hidden">
-          <label>اسم الأثاث</label>
-          <input id="editFurnitureName" class="form-control mb-2">
-          <label>الكود</label>
-          <input id="editFurnitureCode" class="form-control mb-2">
-          <label>الموظف المستلم</label>
-          <select id="editFurnitureEmployee" class="form-select mb-2"></select>
-        </div>
-        <div class="modal-footer">
-          <button class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
-          <button class="btn btn-primary" onclick="saveFurnitureEdit()">حفظ</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
+  <!-- Bootstrap JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
   <script type="module" src="firebase.js"></script>
   <script type="module" src="crud.js"></script>
-
-  <script>
-    function showPage(pageId) {
-      document.querySelectorAll('.page').forEach(p => p.classList.remove('active-page'));
-      document.getElementById(pageId).classList.add('active-page');
-
-      const header = document.getElementById("filterHeader");
-
-      if (pageId === "hierarchyPage" || pageId === "employeesPage") {
-        header.style.display = "none";
-      } else {
-        header.style.display = "block";
-      }
-    }
-  </script>
-
 </body>
 </html>
